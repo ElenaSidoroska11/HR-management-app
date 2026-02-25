@@ -81,7 +81,13 @@ export default function EmployeeList() {
       </div>
 
       {/* Employee List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div 
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4"
+        style={{ 
+          touchAction: 'pan-y', // Only allow vertical scrolling
+          overscrollBehavior: 'contain', // Prevent scroll chaining
+        }}
+      >
         {filteredEmployees.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
             <p>No employees found</p>
