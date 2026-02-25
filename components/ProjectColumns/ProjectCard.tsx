@@ -1,18 +1,14 @@
 'use client';
 
 import type { Project } from '@/types/project';
-import type { Employee } from '@/types/employee';
-
-interface EmployeeWithHours extends Employee {
-  hours?: number;
-}
+import { useProjectAssignments } from '@/lib/hooks/useAssignments';
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
-  const employees: EmployeeWithHours[] = [];
+  const { employees, loading } = useProjectAssignments(project.id);
 
   return (
     <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
@@ -28,7 +24,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
       {/* Employees List */}
       <div className="space-y-2">
-        {employees.length === 0 ? (
+        {loading ? (
+          <p className="text-xs text-gray-400 text-center py-2">Loading...</p>
+        ) : employees.length === 0 ? (
           <p className="text-xs text-gray-400 text-center py-2">
             No employees assigned
           </p>

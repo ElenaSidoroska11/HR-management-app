@@ -1,11 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+interface EmployeeFiltersProps {
+  statusFilter: string;
+  positionFilter: string;
+  onStatusChange: (status: string) => void;
+  onPositionChange: (position: string) => void;
+}
 
-export default function EmployeeFilters() {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [positionFilter, setPositionFilter] = useState<string>('all');
-
+export default function EmployeeFilters({
+  statusFilter,
+  positionFilter,
+  onStatusChange,
+  onPositionChange,
+}: EmployeeFiltersProps) {
   return (
     <div className="space-y-3">
       {/* Status Filter */}
@@ -15,13 +22,13 @@ export default function EmployeeFilters() {
         </label>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => onStatusChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="on-vacation">On Vacation</option>
-          <option value="unassigned">Unassigned</option>
+          <option value="Active">Active</option>
+          <option value="On Vacation">On Vacation</option>
+          <option value="Unassigned">Unassigned</option>
         </select>
       </div>
 
@@ -32,14 +39,14 @@ export default function EmployeeFilters() {
         </label>
         <select
           value={positionFilter}
-          onChange={(e) => setPositionFilter(e.target.value)}
+          onChange={(e) => onPositionChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Positions</option>
-          <option value="foreman">Foreman</option>
-          <option value="mij">MIJ</option>
-          <option value="apprentice">Apprentice</option>
-          <option value="journeyman">Journeyman</option>
+          <option value="Foreman">Foreman</option>
+          <option value="MIJ">MIJ</option>
+          <option value="Apprentice">Apprentice</option>
+          <option value="Journeyman">Journeyman</option>
         </select>
       </div>
     </div>
