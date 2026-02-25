@@ -14,13 +14,8 @@ import {
   QueryConstraint,
   DocumentData,
   QuerySnapshot,
-  DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-
-if (!db) {
-  console.error('Firestore db is not initialized. Please check your Firebase configuration.');
-}
 import type { Employee } from '@/types/employee';
 import type { Project } from '@/types/project';
 import type { Assignment } from '@/types/assignment';
