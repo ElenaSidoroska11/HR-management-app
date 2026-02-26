@@ -1,6 +1,13 @@
 'use client';
 
 import type { EmployeePosition } from '@/types/employee';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface EmployeeFiltersProps {
   statusFilter: string;
@@ -25,16 +32,17 @@ export default function EmployeeFilters({
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Status
         </label>
-        <select
-          value={statusFilter}
-          onChange={(e) => onStatusChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Status</option>
-          <option value="Active">Active</option>
-          <option value="On Vacation">On Vacation</option>
-          <option value="Unassigned">Unassigned</option>
-        </select>
+        <Select value={statusFilter} onValueChange={onStatusChange}>
+          <SelectTrigger className="w-full bg-white text-gray-900 border-gray-300 focus:ring-0 focus:ring-offset-0 focus:border-gray-300">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="all" className="text-gray-900">All Status</SelectItem>
+            <SelectItem value="Active" className="text-gray-900">Active</SelectItem>
+            <SelectItem value="On Vacation" className="text-gray-900">On Vacation</SelectItem>
+            <SelectItem value="Unassigned" className="text-gray-900">Unassigned</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Position Filter */}
@@ -42,18 +50,19 @@ export default function EmployeeFilters({
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Position
         </label>
-        <select
-          value={positionFilter}
-          onChange={(e) => onPositionChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Positions</option>
-          {ALL_POSITIONS.map((position) => (
-            <option key={position} value={position}>
-              {position}
-            </option>
-          ))}
-        </select>
+        <Select value={positionFilter} onValueChange={onPositionChange}>
+          <SelectTrigger className="w-full bg-white text-gray-900 border-gray-300 focus:ring-0 focus:ring-offset-0 focus:border-gray-300">
+            <SelectValue placeholder="All Positions" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="all" className="text-gray-900">All Positions</SelectItem>
+            {ALL_POSITIONS.map((position) => (
+              <SelectItem key={position} value={position} className="text-gray-900">
+                {position}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

@@ -19,8 +19,18 @@ export default function EmployeeList() {
         searchQuery === '' ||
         employee.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === 'all' || employee.status === statusFilter;
+      let matchesStatus = true;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'Active') {
+          matchesStatus = !!employee.currentProjectId;
+        } else if (statusFilter === 'On Vacation') {
+          matchesStatus = employee.status === 'On Vacation';
+        } else if (statusFilter === 'Unassigned') {
+          matchesStatus = !employee.currentProjectId;
+        } else {
+          matchesStatus = employee.status === statusFilter;
+        }
+      }
 
       const matchesPosition =
         positionFilter === 'all' || employee.position === positionFilter;

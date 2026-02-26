@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Employee } from '@/types/employee';
 import { useProjects } from '@/lib/hooks/useProjects';
 import {
@@ -235,24 +236,22 @@ export default function EmployeeActionMenu({
       setNoteText('');
     }
     setShowNoteModal(true);
+    onClose();
   };
 
-  if (!isOpen) return null;
-
-  return (
-    <>
-      {/* Menu */}
-      <div
-        ref={menuRef}
-        className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-48 py-1"
-        style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-        }}
-      >
+  const menuContent = isOpen ? (
+    <div
+      ref={menuRef}
+      className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-9999 w-48 py-1"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
+    >
         <button
           onClick={() => {
             setShowAssignModal(true);
+            onClose();
           }}
           className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
         >
@@ -262,20 +261,24 @@ export default function EmployeeActionMenu({
           <button
             onClick={() => {
               setShowTransferModal(true);
+              onClose();
             }}
             className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
           >
             Transfer
           </button>
         )}
-        <button
-          onClick={() => {
-            setShowVacationModal(true);
-          }}
-          className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
-        >
-          Schedule Vacation
-        </button>
+        {employee.status !== 'On Vacation' && (
+          <button
+            onClick={() => {
+              setShowVacationModal(true);
+              onClose();
+            }}
+            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
+          >
+            Schedule Vacation
+          </button>
+        )}
         <button
           onClick={handleRemoveFromProject}
           className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-sm"
@@ -288,7 +291,13 @@ export default function EmployeeActionMenu({
         >
           {employee.notes && employee.notes.length > 0 ? 'Edit Note' : 'Add Note'}
         </button>
-      </div>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      {/* Menu - Rendered via Portal to escape stacking contexts */}
+      {typeof window !== 'undefined' && menuContent && createPortal(menuContent, document.body)}
 
       {/* Assign to Project Dialog */}
       <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
