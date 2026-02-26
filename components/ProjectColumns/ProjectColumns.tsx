@@ -58,7 +58,7 @@ export default function ProjectColumns() {
           </div>
         </div>
       ) : (
-        <div className="flex gap-4 h-full overflow-x-auto">
+        <div className="flex h-full overflow-x-auto">
           {supervisors.map((supervisor) => (
             <ProjectColumn
               key={supervisor.id}

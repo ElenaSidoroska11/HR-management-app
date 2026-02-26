@@ -12,7 +12,6 @@ import {
 } from '@dnd-kit/core';
 import EmployeeList from '@/components/EmployeeList/EmployeeList';
 import ProjectColumns from '@/components/ProjectColumns/ProjectColumns';
-import EmployeeCard from '@/components/EmployeeList/EmployeeCard';
 import {
   createAssignment,
   getAssignmentsByEmployee,
