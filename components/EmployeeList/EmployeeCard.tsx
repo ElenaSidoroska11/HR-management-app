@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { NotebookPen, Plane } from 'lucide-react';
 import type { Employee } from '@/types/employee';
+import { useEmployeeAssignments } from '@/lib/hooks/useAssignments';
+import { useProjects } from '@/lib/hooks/useProjects';
 import EmployeeActionMenu from '@/components/EmployeeMenu/EmployeeActionMenu';
+import { getPositionBgColor } from '@/lib/utils';
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -12,6 +16,39 @@ interface EmployeeCardProps {
 export default function EmployeeCard({ employee }: EmployeeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const { assignments } = useEmployeeAssignments(employee.id);
+  const { projects } = useProjects();
+  
+  const calculateRemainingVacationDays = useMemo(() => {
+    const vacationDaysPerYear = employee.vacationDaysPerYear || 21;
+    
+    if (employee.vacationStartDate && employee.vacationEndDate) {
+      let startDate: Date;
+      let endDate: Date;
+      
+      if (employee.vacationStartDate instanceof Date) {
+        startDate = employee.vacationStartDate;
+      } else if (employee.vacationStartDate && typeof (employee.vacationStartDate as any).toDate === 'function') {
+        startDate = (employee.vacationStartDate as any).toDate();
+      } else {
+        startDate = new Date(employee.vacationStartDate as any);
+      }
+      
+      if (employee.vacationEndDate instanceof Date) {
+        endDate = employee.vacationEndDate;
+      } else if (employee.vacationEndDate && typeof (employee.vacationEndDate as any).toDate === 'function') {
+        endDate = (employee.vacationEndDate as any).toDate();
+      } else {
+        endDate = new Date(employee.vacationEndDate as any);
+      }
+      
+      const timeDiff = endDate.getTime() - startDate.getTime();
+      const usedDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+      return vacationDaysPerYear - usedDays;
+    }
+    
+    return vacationDaysPerYear;
+  }, [employee.vacationDaysPerYear, employee.vacationStartDate, employee.vacationEndDate]);
   const {
     attributes,
     listeners,
@@ -30,6 +67,20 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
     // transform: CSS.Translate.toString(transform), 
   };
 
+  const formatDate = (date: Date | any): string => {
+    if (!date) return '';
+    let d: Date;
+    if (date instanceof Date) {
+      d = date;
+    } else if (date && typeof date.toDate === 'function') {
+      // Firestore Timestamp
+      d = date.toDate();
+    } else {
+      d = new Date(date);
+    }
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -39,9 +90,9 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
       }}
       {...listeners}
       {...attributes}
-      className={`p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-grab active:cursor-grabbing relative ${
+      className={`p-3 border border-gray-200 rounded-lg transition-colors cursor-grab active:cursor-grabbing relative ${
         isDragging ? 'opacity-30' : 'opacity-100'
-      }`}
+      } ${getPositionBgColor(employee.position)} hover:opacity-80`}
       draggable={false} 
     >
       <div className="flex items-center justify-between">
@@ -49,18 +100,44 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
           <div className="flex items-center gap-2">
             <h3 className="font-medium text-gray-900">{employee.name}</h3>
             <span className="text-sm text-gray-500">
-              ({employee.assignedHours || 0})
+              ({calculateRemainingVacationDays})
             </span>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
-            {employee.currentProjectId
-              ? `Assigned to Project: ${employee.currentProjectId}`
-              : 'Unassigned'}
-          </p>
-          {employee.status === 'On Vacation' && (
-            <p className="text-xs text-orange-600 mt-1 font-medium">
-              On Vacation
-            </p>
+          {employee.status === 'On Vacation' && employee.vacationStartDate && employee.vacationEndDate && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <Plane className="w-3.5 h-3.5 text-orange-600" />
+              <span className="text-xs text-orange-600 font-medium">
+                {formatDate(employee.vacationStartDate)} - {formatDate(employee.vacationEndDate)}
+              </span>
+            </div>
+          )}
+          {assignments.length > 0 ? (
+            <div className="mt-1">
+              <p className="text-sm text-gray-600">
+                Assigned to {assignments.length === 1 ? 'Project' : 'Projects'}:
+              </p>
+              <div className="mt-0.5 space-y-0.5">
+                {assignments.map((assignment) => {
+                  const project = projects.find((p) => p.id === assignment.projectId);
+                  return (
+                    <p key={assignment.id} className="text-xs text-gray-600">
+                      • {project ? `${project.projectId} ${project.name}` : assignment.projectId}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 mt-1">Unassigned</p>
+          )}
+          {employee.notes && employee.notes.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {employee.notes.map((note, index) => (
+                <p key={index} className="text-xs text-gray-500 italic flex">
+                   <NotebookPen className="w-3.5 h-3.5 text-orange-600" /> {note}
+                </p>
+              ))}
+            </div>
           )}
         </div>
         <button

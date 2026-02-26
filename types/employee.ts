@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type EmployeePosition = 'Foreman' | 'MIJ' | 'Apprentice' | 'Journeyman';
+export type EmployeePosition = 'Manager' | 'Foreman' | 'Journeyman' | 'Apprentice';
 export type EmployeeStatus = 'Active' | 'On Vacation' | 'Unassigned';
 
 export interface Employee {
@@ -12,6 +12,7 @@ export interface Employee {
   currentProjectId?: string;
   vacationStartDate?: Timestamp | Date;
   vacationEndDate?: Timestamp | Date;
+  vacationDaysPerYear?: number; // Default 21 days per year
   notes?: string[];
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;

@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   where,
   orderBy,
@@ -72,8 +73,18 @@ export async function createEmployee(employeeData: Omit<Employee, 'id' | 'create
 
 export async function updateEmployee(id: string, updates: Partial<Omit<Employee, 'id' | 'createdAt'>>): Promise<void> {
   const docRef = doc(db, 'employees', id);
+  
+  const cleanUpdates: any = {};
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === undefined) {
+      cleanUpdates[key] = deleteField();
+    } else {
+      cleanUpdates[key] = value;
+    }
+  }
+  
   await updateDoc(docRef, {
-    ...updates,
+    ...cleanUpdates,
     updatedAt: Timestamp.now(),
   });
 }
@@ -259,6 +270,25 @@ export function subscribeToAssignmentsByProject(
   });
 }
 
+export function subscribeToAssignmentsByEmployee(
+  employeeId: string,
+  callback: (assignments: Assignment[]) => void
+): () => void {
+  const q = query(
+    assignmentsCollection,
+    where('employeeId', '==', employeeId),
+    where('status', '==', 'Active')
+  );
+
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+    const assignments = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Assignment[];
+    callback(assignments);
+  });
+}
+
 // ==================== VACATIONS ====================
 
 export const vacationsCollection = collection(db, 'vacations');
@@ -279,6 +309,24 @@ export async function getVacationsByEmployee(employeeId: string): Promise<Vacati
     id: doc.id,
     ...doc.data(),
   })) as Vacation[];
+}
+
+export function subscribeToVacationsByEmployee(
+  employeeId: string,
+  callback: (vacations: Vacation[]) => void
+): () => void {
+  const q = query(
+    vacationsCollection,
+    where('employeeId', '==', employeeId)
+  );
+
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+    const vacations = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Vacation[];
+    callback(vacations);
+  });
 }
 
 export async function getActiveVacations(): Promise<Vacation[]> {
