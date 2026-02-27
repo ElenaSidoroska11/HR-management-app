@@ -73,7 +73,7 @@ export default function EmployeeList() {
       </div>
 
       {/* Search */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 bg-gray-50">
         <EmployeeSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

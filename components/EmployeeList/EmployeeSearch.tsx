@@ -1,5 +1,8 @@
 'use client';
 
+import { Input } from '@/components/ui/input';
+import { UserRoundSearch } from 'lucide-react';
+
 interface EmployeeSearchProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -11,17 +14,16 @@ export default function EmployeeSearch({
 }: EmployeeSearchProps) {
   return (
     <div className="relative">
-      <input
+      <Input
         type="text"
-        placeholder="🔍 Search employees..."
+        placeholder="Search employees..."
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full pl-10 bg-white text-gray-900 border-gray-300 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500 focus-visible:outline-none"
       />
-      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-        🔍
+      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+        <UserRoundSearch className="h-5 w-5" />
       </div>
     </div>
   );
 }
-
