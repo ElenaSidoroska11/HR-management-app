@@ -62,6 +62,15 @@ export async function getEmployeesByPosition(position: Employee['position']): Pr
   })) as Employee[];
 }
 
+export async function getEmployeesByCurrentProject(projectId: string): Promise<Employee[]> {
+  const q = query(employeesCollection, where('currentProjectId', '==', projectId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Employee[];
+}
+
 export async function createEmployee(employeeData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const docRef = await addDoc(employeesCollection, {
     ...employeeData,
@@ -159,6 +168,66 @@ export async function updateProject(id: string, updates: Partial<Omit<Project, '
 }
 
 export async function deleteProject(id: string): Promise<void> {
+  // Get all active assignments for this project
+  const assignments = await getAssignmentsByProject(id);
+  
+  // Get all employees that have this project as their currentProjectId
+  // (this covers cases where assignments might be missing or inconsistent)
+  const employeesWithThisProject = await getEmployeesByCurrentProject(id);
+  
+  // Create a set of employee IDs we've already processed
+  const processedEmployeeIds = new Set<string>();
+  
+  // Remove all assignments and update employees
+  for (const assignment of assignments) {
+    // Check if employee has other active assignments (before removing this one)
+    const employeeAssignments = await getAssignmentsByEmployee(assignment.employeeId);
+    const otherActiveAssignments = employeeAssignments.filter((a) => a.projectId !== id);
+    
+    // Remove the assignment (set status to 'Removed')
+    await removeAssignment(assignment.id);
+    
+    // Mark this employee as processed
+    processedEmployeeIds.add(assignment.employeeId);
+    
+    // Update employee's currentProjectId
+    if (otherActiveAssignments.length === 0) {
+      // No other active assignments, set to Unassigned
+      await updateEmployee(assignment.employeeId, {
+        currentProjectId: undefined,
+        status: 'Unassigned',
+      } as any);
+    } else {
+      // Set currentProjectId to the first remaining active assignment
+      await updateEmployee(assignment.employeeId, {
+        currentProjectId: otherActiveAssignments[0].projectId,
+      } as any);
+    }
+  }
+  
+  // Handle employees that have this project as currentProjectId but no assignment
+  // (data inconsistency case)
+  for (const employee of employeesWithThisProject) {
+    if (!processedEmployeeIds.has(employee.id)) {
+      // This employee has currentProjectId set but no assignment - fix the inconsistency
+      const employeeAssignments = await getAssignmentsByEmployee(employee.id);
+      
+      if (employeeAssignments.length === 0) {
+        // No active assignments, set to Unassigned
+        await updateEmployee(employee.id, {
+          currentProjectId: undefined,
+          status: 'Unassigned',
+        } as any);
+      } else {
+        // Set currentProjectId to the first active assignment
+        await updateEmployee(employee.id, {
+          currentProjectId: employeeAssignments[0].projectId,
+        } as any);
+      }
+    }
+  }
+  
+  // Finally, delete the project document
   const docRef = doc(db, 'projects', id);
   await deleteDoc(docRef);
 }
@@ -414,4 +483,22 @@ export async function createSupervisor(
     createdAt: Timestamp.now(),
   });
   return docRef.id;
+}
+
+export function subscribeToSupervisors(
+  callback: (supervisors: Supervisor[]) => void,
+  constraints?: QueryConstraint[]
+): () => void {
+  const q = constraints
+    ? query(supervisorsCollection, ...constraints)
+    : query(supervisorsCollection, orderBy('name', 'asc'));
+
+  return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+    const supervisors = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Supervisor[];
+
+    callback(supervisors);
+  });
 }

@@ -100,12 +100,12 @@ export default function Home() {
       onDragEnd={handleDragEnd}
     >
       <div 
-        className="flex h-screen w-full overflow-hidden bg-gray-50 flex-col md:flex-row"
+        className="flex h-screen w-full overflow-hidden flex-col md:flex-row"
         style={{ touchAction: activeEmployee ? 'none' : 'pan-y' }}
       >
         {/*  Employee List */}
         <aside 
-          className="w-full md:w-80 border-r border-gray-200 bg-white flex flex-col overflow-hidden h-1/2 md:h-full overflow-x-hidden"
+          className="w-full md:w-80 border-r border-gray-300  flex flex-col overflow-hidden h-1/2 md:h-full overflow-x-hidden"
           style={{ 
             touchAction: activeEmployee ? 'none' : 'pan-y',
             overflowX: activeEmployee ? 'hidden' : 'hidden',

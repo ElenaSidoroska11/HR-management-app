@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { NotebookPen, Plane } from 'lucide-react';
+import { NotebookPen, Plane, Pencil } from 'lucide-react';
 import type { Employee } from '@/types/employee';
 import { useEmployeeAssignments } from '@/lib/hooks/useAssignments';
 import { useProjects } from '@/lib/hooks/useProjects';
@@ -11,9 +11,10 @@ import { getPositionBgColor } from '@/lib/utils';
 
 interface EmployeeCardProps {
   employee: Employee;
+  onEdit?: (employee: Employee) => void;
 }
 
-export default function EmployeeCard({ employee }: EmployeeCardProps) {
+export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const { assignments } = useEmployeeAssignments(employee.id);
@@ -99,6 +100,18 @@ export default function EmployeeCard({ employee }: EmployeeCardProps) {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-medium text-gray-900">{employee.name}</h3>
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(employee);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-0.5 transition-colors"
+                title="Edit employee name"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
             <span className="text-sm text-gray-500">
               ({calculateRemainingVacationDays})
             </span>

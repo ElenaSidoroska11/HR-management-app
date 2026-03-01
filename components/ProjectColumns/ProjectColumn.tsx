@@ -18,7 +18,7 @@ export default function ProjectColumn({
   projects,
 }: ProjectColumnProps) {
   return (
-    <div className="shrink-0 w-80 bg-gray-50 rounded-lg p-4 flex flex-col h-full">
+    <div className="shrink-0 w-80 rounded-lg p-4 flex flex-col h-full">
       {/* Supervisor Header */}
       <div className="mb-4 pb-3 border-b border-gray-300">
         <h3 className="text-lg font-semibold text-gray-800">
