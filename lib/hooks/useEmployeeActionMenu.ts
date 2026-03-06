@@ -9,6 +9,7 @@ import {
   updateEmployee,
   createVacation,
 } from '@/lib/firebase/firestore';
+import { useToast } from './use-toast';
 import type { Employee } from '@/types/employee';
 
 interface UseEmployeeActionMenuProps {
@@ -23,6 +24,7 @@ export function useEmployeeActionMenu({
   onClose,
 }: UseEmployeeActionMenuProps) {
   const { projects } = useProjects();
+  const { toast } = useToast();
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
@@ -109,8 +111,11 @@ export function useEmployeeActionMenu({
       setSelectedProjectId('');
       onClose();
     } catch (error) {
-      console.error('Error assigning employee:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to assign employee to project. Please try again.',
+      });
     }
   };
 
@@ -144,8 +149,11 @@ export function useEmployeeActionMenu({
       setSelectedProjectId('');
       onClose();
     } catch (error) {
-      console.error('Error transferring employee:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to transfer employee. Please try again.',
+      });
     }
   };
 
@@ -172,8 +180,11 @@ export function useEmployeeActionMenu({
       setVacationEndDate('');
       onClose();
     } catch (error) {
-      console.error('Error scheduling vacation:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to schedule vacation. Please try again.',
+      });
     }
   };
 
@@ -200,8 +211,11 @@ export function useEmployeeActionMenu({
 
       setShowRemoveConfirmDialog(false);
     } catch (error) {
-      console.error('Error removing from project:', error);
-    
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to remove employee from project. Please try again.',
+      });
     }
   };
 
@@ -226,8 +240,11 @@ export function useEmployeeActionMenu({
       setNoteText('');
       onClose();
     } catch (error) {
-      console.error('Error saving note:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save note. Please try again.',
+      });
     }
   };
 

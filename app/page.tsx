@@ -21,11 +21,13 @@ import {
   getProject,
 } from "@/lib/firebase/firestore";
 import { useEmployees } from "@/lib/hooks/useEmployees";
+import { useToast } from "@/lib/hooks/use-toast";
 import type { Employee } from "@/types/employee";
 
 export default function Home() {
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const { employees } = useEmployees();
+  const { toast } = useToast();
 
   // Configure sensors to prevent scrolling during drag
   const sensors = useSensors(
@@ -86,7 +88,11 @@ export default function Home() {
         } as any);
       }
     } catch (error) {
-      console.error("Error creating assignment:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to assign employee to project. Please try again.',
+      });
     }
   };
 

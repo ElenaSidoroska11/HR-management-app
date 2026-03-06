@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { subscribeToEmployees, updateEmployee } from '@/lib/firebase/firestore';
+import { useToast } from './use-toast';
 import type { Employee } from '@/types/employee';
 
 // Helper function to convert Firestore Timestamp or Date to Date
@@ -18,7 +19,10 @@ const toDate = (date: Date | any): Date => {
 };
 
 // Check if vacation has ended and update employee status if needed
-const checkAndUpdateVacationStatus = async (employee: Employee) => {
+const checkAndUpdateVacationStatus = async (
+  employee: Employee,
+  toast: (props: { variant: 'destructive'; title: string; description: string }) => void
+) => {
   // Only check employees with "On Vacation" status and vacation end date
   if (employee.status !== 'On Vacation' || !employee.vacationEndDate) {
     return;
@@ -43,7 +47,11 @@ const checkAndUpdateVacationStatus = async (employee: Employee) => {
       } as any);
     }
   } catch (error) {
-    console.error(`Error checking vacation status for employee ${employee.id}:`, error);
+    toast({
+      variant: 'destructive',
+      title: 'Error',
+      description: `Failed to update vacation status for employee ${employee.name}. Please try again.`,
+    });
   }
 };
 
@@ -51,6 +59,7 @@ export function useEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -61,7 +70,7 @@ export function useEmployees() {
 
         // Check and update vacation status for all employees
         fetchedEmployees.forEach((employee) => {
-          checkAndUpdateVacationStatus(employee);
+          checkAndUpdateVacationStatus(employee, toast);
         });
       });
 
@@ -70,7 +79,7 @@ export function useEmployees() {
       setError(err instanceof Error ? err : new Error('Failed to load employees'));
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   return { employees, loading, error };
 }

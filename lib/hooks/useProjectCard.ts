@@ -11,6 +11,7 @@ import {
   updateProject,
   deleteProject,
 } from '@/lib/firebase/firestore';
+import { useToast } from './use-toast';
 import type { Project } from '@/types/project';
 
 interface UseProjectCardProps {
@@ -19,6 +20,7 @@ interface UseProjectCardProps {
 
 export function useProjectCard({ project }: UseProjectCardProps) {
   const { employees, loading } = useProjectAssignments(project.id);
+  const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [employeeToRemove, setEmployeeToRemove] = useState<{
     id: string;
@@ -140,8 +142,11 @@ export function useProjectCard({ project }: UseProjectCardProps) {
       setShowConfirmDialog(false);
       setEmployeeToRemove(null);
     } catch (error) {
-      console.error('Error removing employee from project:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to remove employee from project. Please try again.',
+      });
     }
   };
 
@@ -164,7 +169,11 @@ export function useProjectCard({ project }: UseProjectCardProps) {
       });
       setShowEditDialog(false);
     } catch (error) {
-      console.error('Error updating project:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update project. Please try again.',
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -176,7 +185,11 @@ export function useProjectCard({ project }: UseProjectCardProps) {
       await deleteProject(project.id);
       setShowDeleteDialog(false);
     } catch (error) {
-      console.error('Error deleting project:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete project. Please try again.',
+      });
     } finally {
       setIsDeleting(false);
     }

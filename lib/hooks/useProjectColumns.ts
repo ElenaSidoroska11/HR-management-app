@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useProjects } from './useProjects';
 import { useSupervisors } from './useSupervisors';
 import { createProject } from '@/lib/firebase/firestore';
+import { useToast } from './use-toast';
 import type { Project } from '@/types/project';
 import type { Supervisor as SupervisorType } from '@/types/supervisor';
 
@@ -16,6 +17,7 @@ interface Supervisor {
 export function useProjectColumns() {
   const { projects, loading: projectsLoading, error: projectsError } = useProjects();
   const { supervisors: allSupervisors, loading: supervisorsLoading } = useSupervisors();
+  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
@@ -77,7 +79,11 @@ export function useProjectColumns() {
       setSelectedSupervisorId('');
       setShowCreateDialog(false);
     } catch (error) {
-      console.error('Error creating project:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create project. Please try again.',
+      });
     } finally {
       setIsCreating(false);
     }

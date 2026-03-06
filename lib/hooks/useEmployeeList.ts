@@ -3,10 +3,12 @@
 import { useState, useMemo } from 'react';
 import { useEmployees } from './useEmployees';
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/firebase/firestore';
+import { useToast } from './use-toast';
 import type { Employee } from '@/types/employee';
 
 export function useEmployeeList() {
   const { employees, loading, error } = useEmployees();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
@@ -53,8 +55,11 @@ export function useEmployeeList() {
       setShowAddDialog(false);
       setEmployeeName('');
     } catch (error) {
-      console.error('Error creating employee:', error);
-    
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create employee. Please try again.',
+      });
     }
   };
 
@@ -69,8 +74,11 @@ export function useEmployeeList() {
       setEmployeeName('');
       setEditingEmployee(null);
     } catch (error) {
-      console.error('Error updating employee:', error);
-    
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update employee. Please try again.',
+      });
     }
   };
 
@@ -90,8 +98,11 @@ export function useEmployeeList() {
       setEmployeeName('');
       setEditingEmployee(null);
     } catch (error) {
-      console.error('Error deleting employee:', error);
-     
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete employee. Please try again.',
+      });
     }
   };
 
