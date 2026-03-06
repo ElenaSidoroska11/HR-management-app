@@ -1,16 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Employee } from '@/types/employee';
-import { useProjects } from '@/lib/hooks/useProjects';
-import {
-  createAssignment,
-  getAssignmentsByEmployee,
-  removeAssignment,
-  updateEmployee,
-  createVacation,
-} from '@/lib/firebase/firestore';
+import { useEmployeeActionMenu } from '@/lib/hooks/useEmployeeActionMenu';
 import {
   Dialog,
   DialogContent,
@@ -39,205 +31,40 @@ export default function EmployeeActionMenu({
   onClose,
   position,
 }: EmployeeActionMenuProps) {
-  const { projects } = useProjects();
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showVacationModal, setShowVacationModal] = useState(false);
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [vacationStartDate, setVacationStartDate] = useState('');
-  const [vacationEndDate, setVacationEndDate] = useState('');
-  const [noteText, setNoteText] = useState('');
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const currentProject = employee.currentProjectId
-    ? projects.find((p) => p.id === employee.currentProjectId)
-    : null;
-  const availableProjectsForTransfer = projects.filter(
-    (p) => p.id !== employee.currentProjectId
-  );
-  const availableProjectsForAssignment = projects.filter(
-    (p) => p.id !== employee.currentProjectId
-  );
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen && !showAssignModal && !showTransferModal && !showVacationModal && !showNoteModal) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose, showAssignModal, showTransferModal, showVacationModal, showNoteModal]);
-
-  const handleAssignToProject = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      const existingAssignments = await getAssignmentsByEmployee(employee.id);
-      const alreadyAssigned = existingAssignments.some(
-        (assignment) =>
-          assignment.projectId === selectedProjectId &&
-          assignment.status === 'Active'
-      );
-
-      if (alreadyAssigned) {
-        alert('Employee is already assigned to this project!');
-        return;
-      }
-
-      await createAssignment({
-        employeeId: employee.id,
-        projectId: selectedProjectId,
-        hours: 0,
-        status: 'Active',
-      } as any);
-
-      await updateEmployee(employee.id, {
-        currentProjectId: selectedProjectId,
-      } as any);
-
-      setShowAssignModal(false);
-      setSelectedProjectId('');
-      onClose();
-    } catch (error) {
-      console.error('Error assigning employee:', error);
-      alert('Failed to assign employee to project');
-    }
-  };
-
-  const handleTransfer = async () => {
-    if (!selectedProjectId) return;
-
-    try {
-      // Remove from current project
-      const existingAssignments = await getAssignmentsByEmployee(employee.id);
-      const activeAssignments = existingAssignments.filter(
-        (a) => a.status === 'Active'
-      );
-
-      for (const assignment of activeAssignments) {
-        await removeAssignment(assignment.id);
-      }
-
-      // Assign to new project
-      await createAssignment({
-        employeeId: employee.id,
-        projectId: selectedProjectId,
-        hours: 0,
-        status: 'Active',
-      } as any);
-
-      await updateEmployee(employee.id, {
-        currentProjectId: selectedProjectId,
-      } as any);
-
-      setShowTransferModal(false);
-      setSelectedProjectId('');
-      onClose();
-    } catch (error) {
-      console.error('Error transferring employee:', error);
-      alert('Failed to transfer employee');
-    }
-  };
-
-  const handleScheduleVacation = async () => {
-    if (!vacationStartDate || !vacationEndDate) return;
-
-    try {
-      await createVacation({
-        employeeId: employee.id,
-        startDate: new Date(vacationStartDate),
-        endDate: new Date(vacationEndDate),
-        status: 'Scheduled',
-        createdBy: 'hr-manager', // TODO: Get from auth
-      } as any);
-
-      await updateEmployee(employee.id, {
-        status: 'On Vacation',
-        vacationStartDate: new Date(vacationStartDate),
-        vacationEndDate: new Date(vacationEndDate),
-      } as any);
-
-      setShowVacationModal(false);
-      setVacationStartDate('');
-      setVacationEndDate('');
-      onClose();
-    } catch (error) {
-      console.error('Error scheduling vacation:', error);
-      alert('Failed to schedule vacation');
-    }
-  };
-
-  const handleRemoveFromProject = async () => {
-    try {
-      const existingAssignments = await getAssignmentsByEmployee(employee.id);
-      const activeAssignments = existingAssignments.filter(
-        (a) => a.status === 'Active'
-      );
-
-      for (const assignment of activeAssignments) {
-        await removeAssignment(assignment.id);
-      }
-
-      await updateEmployee(employee.id, {
-        currentProjectId: undefined, 
-        status: 'Unassigned',
-      } as any);
-
-      onClose();
-    } catch (error) {
-      console.error('Error removing from project:', error);
-      alert('Failed to remove employee from project');
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!noteText.trim()) return;
-
-    try {
-      const currentNotes = employee.notes || [];
-      const hasExistingNotes = currentNotes.length > 0;
-      
-      if (hasExistingNotes) {
-        // Replace all notes with the edited note
-        await updateEmployee(employee.id, {
-          notes: [noteText],
-        } as any);
-      } else {
-        // Add new note
-        await updateEmployee(employee.id, {
-          notes: [...currentNotes, noteText],
-        } as any);
-      }
-
-      setShowNoteModal(false);
-      setNoteText('');
-      onClose();
-    } catch (error) {
-      console.error('Error saving note:', error);
-      alert('Failed to save note');
-    }
-  };
-
-  const handleOpenNoteModal = () => {
-    // Pre-populate with existing notes if they exist
-    const currentNotes = employee.notes || [];
-    if (currentNotes.length > 0) {
-      // Show all notes, separated by newlines, or just the last one
-      setNoteText(currentNotes.join('\n'));
-    } else {
-      setNoteText('');
-    }
-    setShowNoteModal(true);
-    onClose();
-  };
+  const {
+    menuRef,
+    currentProject,
+    availableProjectsForTransfer,
+    availableProjectsForAssignment,
+    showAssignModal,
+    showTransferModal,
+    showVacationModal,
+    showNoteModal,
+    showRemoveConfirmDialog,
+    setShowRemoveConfirmDialog,
+    selectedProjectId,
+    setSelectedProjectId,
+    vacationStartDate,
+    setVacationStartDate,
+    vacationEndDate,
+    setVacationEndDate,
+    noteText,
+    setNoteText,
+    handleAssignToProject,
+    handleTransfer,
+    handleScheduleVacation,
+    handleRemoveFromProject,
+    handleConfirmRemove,
+    handleAddNote,
+    handleOpenNoteModal,
+    handleCloseAssignModal,
+    handleCloseTransferModal,
+    handleCloseVacationModal,
+    handleCloseNoteModal,
+    handleOpenAssignModal,
+    handleOpenTransferModal,
+    handleOpenVacationModal,
+  } = useEmployeeActionMenu({ employee, isOpen, onClose });
 
   const menuContent = isOpen ? (
     <div
@@ -249,20 +76,14 @@ export default function EmployeeActionMenu({
       }}
     >
         <button
-          onClick={() => {
-            setShowAssignModal(true);
-            onClose();
-          }}
+          onClick={handleOpenAssignModal}
           className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
         >
           Assign to Project
         </button>
         {employee.currentProjectId && (
           <button
-            onClick={() => {
-              setShowTransferModal(true);
-              onClose();
-            }}
+            onClick={handleOpenTransferModal}
             className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
           >
             Transfer
@@ -270,10 +91,7 @@ export default function EmployeeActionMenu({
         )}
         {employee.status !== 'On Vacation' && (
           <button
-            onClick={() => {
-              setShowVacationModal(true);
-              onClose();
-            }}
+            onClick={handleOpenVacationModal}
             className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
           >
             Schedule Vacation
@@ -300,7 +118,7 @@ export default function EmployeeActionMenu({
       {typeof window !== 'undefined' && menuContent && createPortal(menuContent, document.body)}
 
       {/* Assign to Project Dialog */}
-      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
+      <Dialog open={showAssignModal} onOpenChange={handleCloseAssignModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Assign to Project</DialogTitle>
@@ -321,17 +139,14 @@ export default function EmployeeActionMenu({
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowAssignModal(false);
-                setSelectedProjectId('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseAssignModal(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleAssignToProject}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Assign
             </button>
@@ -340,7 +155,7 @@ export default function EmployeeActionMenu({
       </Dialog>
 
       {/* Transfer Dialog */}
-      <Dialog open={showTransferModal} onOpenChange={setShowTransferModal}>
+      <Dialog open={showTransferModal} onOpenChange={handleCloseTransferModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Transfer Employee</DialogTitle>
@@ -376,17 +191,14 @@ export default function EmployeeActionMenu({
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowTransferModal(false);
-                setSelectedProjectId('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseTransferModal(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleTransfer}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Transfer
             </button>
@@ -395,7 +207,7 @@ export default function EmployeeActionMenu({
       </Dialog>
 
       {/* Vacation Dialog */}
-      <Dialog open={showVacationModal} onOpenChange={setShowVacationModal}>
+      <Dialog open={showVacationModal} onOpenChange={handleCloseVacationModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Schedule Vacation</DialogTitle>
@@ -426,18 +238,14 @@ export default function EmployeeActionMenu({
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowVacationModal(false);
-                setVacationStartDate('');
-                setVacationEndDate('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseVacationModal(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleScheduleVacation}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Schedule
             </button>
@@ -446,12 +254,7 @@ export default function EmployeeActionMenu({
       </Dialog>
 
       {/* Add/Edit Note Dialog */}
-      <Dialog open={showNoteModal} onOpenChange={(open) => {
-        setShowNoteModal(open);
-        if (!open) {
-          setNoteText('');
-        }
-      }}>
+      <Dialog open={showNoteModal} onOpenChange={handleCloseNoteModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">
@@ -468,19 +271,50 @@ export default function EmployeeActionMenu({
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowNoteModal(false);
-                setNoteText('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseNoteModal(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleAddNote}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               {employee.notes && employee.notes.length > 0 ? 'Save Note' : 'Add Note'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove from Project Confirmation Dialog */}
+      <Dialog open={showRemoveConfirmDialog} onOpenChange={setShowRemoveConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-black">Remove Employee from Project</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              Are you sure you want to remove <strong>{employee.name}</strong> from project{' '}
+              {currentProject && (
+                <strong>{currentProject.projectId} {currentProject.name}</strong>
+              )}
+              ?
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setShowRemoveConfirmDialog(false);
+              }}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmRemove}
+              className="px-5 py-2.5 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              Remove
             </button>
           </DialogFooter>
         </DialogContent>

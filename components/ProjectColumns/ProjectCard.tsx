@@ -1,11 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useDroppable } from '@dnd-kit/core';
 import { Plane, Pencil } from 'lucide-react';
 import type { Project } from '@/types/project';
-import { useProjectAssignments } from '@/lib/hooks/useAssignments';
-import { removeAssignment, getAssignmentsByEmployee, updateEmployee, getEmployee, updateProject, deleteProject } from '@/lib/firebase/firestore';
+import { useProjectCard } from '@/lib/hooks/useProjectCard';
 import { getPositionBgColor } from '@/lib/utils';
 import {
   Dialog,
@@ -20,154 +17,33 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
-  const { employees, loading } = useProjectAssignments(project.id);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [employeeToRemove, setEmployeeToRemove] = useState<{ id: string; name: string; assignmentId: string } | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [editedProjectName, setEditedProjectName] = useState(project.name);
-  const [editedProjectId, setEditedProjectId] = useState(project.projectId);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  
-  const { setNodeRef, isOver } = useDroppable({
-    id: project.id,
-    data: {
-      type: 'project',
-      project,
-    },
-  });
-
-  const formatDate = (date: Date | any): string => {
-    if (!date) return '';
-    let d: Date;
-    if (date instanceof Date) {
-      d = date;
-    } else if (date && typeof date.toDate === 'function') {
-      // Firestore Timestamp
-      d = date.toDate();
-    } else {
-      d = new Date(date);
-    }
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const calculateRemainingVacationDays = (employee: any): number => {
-    const vacationDaysPerYear = employee.vacationDaysPerYear || 21;
-    
-    // If employee has current vacation dates, calculate used days from that
-    if (employee.vacationStartDate && employee.vacationEndDate) {
-      let startDate: Date;
-      let endDate: Date;
-      
-      if (employee.vacationStartDate instanceof Date) {
-        startDate = employee.vacationStartDate;
-      } else if (employee.vacationStartDate && typeof (employee.vacationStartDate as any).toDate === 'function') {
-        startDate = (employee.vacationStartDate as any).toDate();
-      } else {
-        startDate = new Date(employee.vacationStartDate as any);
-      }
-      
-      if (employee.vacationEndDate instanceof Date) {
-        endDate = employee.vacationEndDate;
-      } else if (employee.vacationEndDate && typeof (employee.vacationEndDate as any).toDate === 'function') {
-        endDate = (employee.vacationEndDate as any).toDate();
-      } else {
-        endDate = new Date(employee.vacationEndDate as any);
-      }
-      
-      const timeDiff = endDate.getTime() - startDate.getTime();
-      const usedDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) + 1;
-      return vacationDaysPerYear - usedDays;
-    }
-    
-    // No current vacation, return full days
-    return vacationDaysPerYear;
-  };
-
-  const handleRemoveClick = (employee: any) => {
-    setEmployeeToRemove({
-      id: employee.id,
-      name: employee.name,
-      assignmentId: employee.assignmentId,
-    });
-    setShowConfirmDialog(true);
-  };
-
-  const handleConfirmRemove = async () => {
-    if (!employeeToRemove) return;
-
-    try {
-      const employee = await getEmployee(employeeToRemove.id);
-      
-      // Remove the assignment
-      await removeAssignment(employeeToRemove.assignmentId);
-
-      // Check remaining assignments
-      const employeeAssignments = await getAssignmentsByEmployee(employeeToRemove.id);
-      const activeAssignments = employeeAssignments.filter((a) => a.status === 'Active');
-
-      // Update employee's currentProjectId and status
-      if (activeAssignments.length === 0) {
-        // No active assignments left
-        await updateEmployee(employeeToRemove.id, {
-          currentProjectId: undefined,
-          status: 'Unassigned',
-        } as any);
-      } else if (employee?.currentProjectId === project.id) {
-        // If this project was the currentProjectId, set it to the first remaining assignment
-        await updateEmployee(employeeToRemove.id, {
-          currentProjectId: activeAssignments[0].projectId,
-        } as any);
-      }
-
-      setShowConfirmDialog(false);
-      setEmployeeToRemove(null);
-    } catch (error) {
-      console.error('Error removing employee from project:', error);
-      alert('Failed to remove employee from project');
-    }
-  };
-
-  const handleEditProject = () => {
-    setEditedProjectName(project.name);
-    setEditedProjectId(project.projectId);
-    setShowEditDialog(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editedProjectName.trim() || !editedProjectId.trim()) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await updateProject(project.id, {
-        name: editedProjectName.trim(),
-        projectId: editedProjectId.trim(),
-      });
-      setShowEditDialog(false);
-    } catch (error) {
-      console.error('Error updating project:', error);
-      alert('Failed to update project');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteProject(project.id);
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      alert('Failed to delete project');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const {
+    employees,
+    loading,
+    setNodeRef,
+    isOver,
+    showConfirmDialog,
+    showEditDialog,
+    showDeleteDialog,
+    setShowDeleteDialog,
+    editedProjectName,
+    setEditedProjectName,
+    editedProjectId,
+    setEditedProjectId,
+    isUpdating,
+    isDeleting,
+    employeeToRemove,
+    formatDate,
+    calculateRemainingVacationDays,
+    handleRemoveClick,
+    handleConfirmRemove,
+    handleEditProject,
+    handleSaveEdit,
+    handleDeleteProject,
+    handleCloseEditDialog,
+    handleOpenDeleteFromEdit,
+    handleCloseConfirmDialog,
+  } = useProjectCard({ project });
 
   return (
     <div
@@ -178,7 +54,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           : 'border-gray-200'
       }`}
     >
-      {/* Project Header */}
+
       <div className="mb-3">
         <div className="flex items-center justify-between gap-2">
           <h4 className="font-semibold text-gray-900 flex-1">
@@ -251,7 +127,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       {/* Edit Project Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <Dialog open={showEditDialog} onOpenChange={handleCloseEditDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Edit Project</DialogTitle>
@@ -286,28 +162,23 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowEditDialog(false);
-                setShowDeleteDialog(true);
+                handleOpenDeleteFromEdit();
               }}
-              className="px-5 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors duration-200 border border-red-200 w-full sm:w-auto"
+              className="px-5 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-full font-medium transition-colors duration-200 border border-red-200 w-full sm:w-auto"
             >
               Delete Project
             </button>
             <div className="flex gap-2 w-full sm:w-auto">
               <button
-                onClick={() => {
-                  setShowEditDialog(false);
-                  setEditedProjectName(project.name);
-                  setEditedProjectId(project.projectId);
-                }}
-                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200 flex-1 sm:flex-none"
+                onClick={() => handleCloseEditDialog(false)}
+                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200 flex-1 sm:flex-none"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={isUpdating}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
               >
                 {isUpdating ? 'Saving...' : 'Save'}
               </button>
@@ -351,7 +222,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </Dialog>
 
       {/* Remove Employee Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <Dialog open={showConfirmDialog} onOpenChange={handleCloseConfirmDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Remove Employee from Project</DialogTitle>
@@ -364,17 +235,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowConfirmDialog(false);
-                setEmployeeToRemove(null);
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseConfirmDialog(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirmRemove}
-              className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Remove
             </button>

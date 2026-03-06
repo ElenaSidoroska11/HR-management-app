@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { 
-  DndContext, 
-  DragEndEvent, 
+import { useState } from "react";
+import {
+  DndContext,
+  DragEndEvent,
   DragStartEvent,
   DragOverlay,
-  PointerSensor, 
-  useSensor, 
-  useSensors 
-} from '@dnd-kit/core';
-import EmployeeList from '@/components/EmployeeList/EmployeeList';
-import ProjectColumns from '@/components/ProjectColumns/ProjectColumns';
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import EmployeeList from "@/components/EmployeeList/EmployeeList";
+import ProjectColumns from "@/components/ProjectColumns/ProjectColumns";
 import {
   createAssignment,
   getAssignmentsByEmployee,
@@ -19,9 +19,9 @@ import {
   updateEmployee,
   updateProject,
   getProject,
-} from '@/lib/firebase/firestore';
-import { useEmployees } from '@/lib/hooks/useEmployees';
-import type { Employee } from '@/types/employee';
+} from "@/lib/firebase/firestore";
+import { useEmployees } from "@/lib/hooks/useEmployees";
+import type { Employee } from "@/types/employee";
 
 export default function Home() {
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
@@ -33,7 +33,7 @@ export default function Home() {
       activationConstraint: {
         distance: 8, // Require 8px movement before drag starts
       },
-    })
+    }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -56,12 +56,10 @@ export default function Home() {
     // Check if employee is already assigned to this project
     const existingAssignments = await getAssignmentsByEmployee(employeeId);
     const alreadyAssigned = existingAssignments.some(
-      (assignment) =>
-        assignment.projectId === projectId && assignment.status === 'Active'
+      (assignment) => assignment.projectId === projectId && assignment.status === "Active",
     );
 
     if (alreadyAssigned) {
-      alert('Employee is already assigned to this project!');
       return;
     }
 
@@ -71,7 +69,7 @@ export default function Home() {
         employeeId,
         projectId,
         hours: 0, // Default hours
-        status: 'Active',
+        status: "Active",
       } as any);
 
       // Update employee's current project
@@ -88,30 +86,23 @@ export default function Home() {
         } as any);
       }
     } catch (error) {
-      console.error('Error creating assignment:', error);
-      alert('Failed to assign employee to project');
+      console.error("Error creating assignment:", error);
     }
   };
 
   return (
-    <DndContext 
-      sensors={sensors} 
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div 
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div
         className="flex h-screen w-full overflow-hidden flex-col md:flex-row"
-        style={{ touchAction: activeEmployee ? 'none' : 'pan-y' }}
-      >
+        style={{ touchAction: activeEmployee ? "none" : "pan-y" }}>
         {/*  Employee List */}
-        <aside 
+        <aside
           className="w-full md:w-80 border-r border-gray-300  flex flex-col overflow-hidden h-1/2 md:h-full overflow-x-hidden"
-          style={{ 
-            touchAction: activeEmployee ? 'none' : 'pan-y',
-            overflowX: activeEmployee ? 'hidden' : 'hidden',
-            overflowY: activeEmployee ? 'hidden' : 'auto',
-          }}
-        >
+          style={{
+            touchAction: activeEmployee ? "none" : "pan-y",
+            overflowX: activeEmployee ? "hidden" : "hidden",
+            overflowY: activeEmployee ? "hidden" : "auto",
+          }}>
           <EmployeeList />
         </aside>
 
@@ -129,14 +120,12 @@ export default function Home() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-gray-900">{activeEmployee.name}</h3>
-                  <span className="text-sm text-gray-500">
-                    ({activeEmployee.assignedHours || 0})
-                  </span>
+                  <span className="text-sm text-gray-500">({activeEmployee.assignedHours || 0})</span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
                   {activeEmployee.currentProjectId
                     ? `Assigned to Project: ${activeEmployee.currentProjectId}`
-                    : 'Unassigned'}
+                    : "Unassigned"}
                 </p>
               </div>
             </div>

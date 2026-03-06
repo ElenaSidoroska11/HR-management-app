@@ -1,13 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import ProjectColumn from './ProjectColumn';
-import { useProjects } from '@/lib/hooks/useProjects';
-import { useSupervisors } from '@/lib/hooks/useSupervisors';
-import { createProject } from '@/lib/firebase/firestore';
-import type { Project } from '@/types/project';
-import type { Supervisor as SupervisorType } from '@/types/supervisor';
+import { useProjectColumns } from '@/lib/hooks/useProjectColumns';
 import {
   Dialog,
   DialogContent,
@@ -23,84 +18,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface Supervisor {
-  id: string;
-  name: string;
-  projects: Project[];
-}
-
 export default function ProjectColumns() {
-  const { projects, loading: projectsLoading, error: projectsError } = useProjects();
-  const { supervisors: allSupervisors, loading: supervisorsLoading } = useSupervisors();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [projectName, setProjectName] = useState('');
-  const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-
-  const supervisorMap = useMemo(() => {
-    const map = new Map<string, SupervisorType>();
-    allSupervisors.forEach((supervisor) => {
-      map.set(supervisor.id, supervisor);
-    });
-    return map;
-  }, [allSupervisors]);
-
-  // Group projects by supervisor, using actual supervisor names from supervisors collection
-  const supervisors = useMemo(() => {
-    const groupedMap = new Map<string, Supervisor>();
-
-    projects.forEach((project) => {
-      const key = project.supervisorId;
-      if (!groupedMap.has(key)) {
-        // Get supervisor name from supervisors collection, fallback to project.supervisorName if not found
-        const supervisor = supervisorMap.get(key);
-        groupedMap.set(key, {
-          id: project.supervisorId,
-          name: supervisor?.name || project.supervisorName || 'Unknown Supervisor',
-          projects: [],
-        });
-      }
-      groupedMap.get(key)!.projects.push(project);
-    });
-
-    return Array.from(groupedMap.values());
-  }, [projects, supervisorMap]);
-
-  const loading = projectsLoading || supervisorsLoading;
-  const error = projectsError;
-
-  const handleCreateProject = async () => {
-    if (!projectName.trim() || !selectedSupervisorId) {
-      alert('Please fill in all fields');
-      return;
-    }
-
-    const selectedSupervisor = allSupervisors.find(s => s.id === selectedSupervisorId);
-    if (!selectedSupervisor) {
-      alert('Please select a supervisor');
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      await createProject({
-        projectId: projectName.trim(), 
-        name: projectName.trim(),
-        supervisorId: selectedSupervisorId,
-        supervisorName: selectedSupervisor.name,
-        totalEmployees: 0,
-      });
-
-      setProjectName('');
-      setSelectedSupervisorId('');
-      setShowCreateDialog(false);
-    } catch (error) {
-      console.error('Error creating project:', error);
-      alert('Failed to create project');
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  const {
+    supervisors,
+    allSupervisors,
+    loading,
+    error,
+    showCreateDialog,
+    projectName,
+    setProjectName,
+    selectedSupervisorId,
+    setSelectedSupervisorId,
+    isCreating,
+    handleCreateProject,
+    handleCloseCreateDialog,
+  } = useProjectColumns();
 
   if (loading) {
     return (
@@ -124,8 +56,8 @@ export default function ProjectColumns() {
         {/* Header with Add Project Button */}
         <div className="mb-4 flex justify-end">
           <button
-            onClick={() => setShowCreateDialog(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+            onClick={() => handleCloseCreateDialog(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 transition-colors duration-200 shadow-md hover:shadow-lg"
           >
             <Plus className="h-5 w-5" />
             Add Project
@@ -155,7 +87,7 @@ export default function ProjectColumns() {
       </div>
 
       {/* Create Project Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateDialog} onOpenChange={handleCloseCreateDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Create New Project</DialogTitle>
@@ -193,19 +125,15 @@ export default function ProjectColumns() {
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowCreateDialog(false);
-                setProjectName('');
-                setSelectedSupervisorId('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseCreateDialog(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateProject}
               disabled={isCreating}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCreating ? 'Creating...' : 'Create Project'}
             </button>

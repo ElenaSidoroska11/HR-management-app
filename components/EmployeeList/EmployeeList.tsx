@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import EmployeeSearch from './EmployeeSearch';
 import EmployeeFilters from './EmployeeFilters';
 import EmployeeCard from './EmployeeCard';
-import { useEmployees } from '@/lib/hooks/useEmployees';
-import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/firebase/firestore';
-import type { Employee } from '@/types/employee';
+import { useEmployeeList } from '@/lib/hooks/useEmployeeList';
 import {
   Dialog,
   DialogContent,
@@ -18,99 +15,32 @@ import {
 
 
 export default function EmployeeList() {
-  const { employees, loading, error } = useEmployees();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [positionFilter, setPositionFilter] = useState<string>('all');
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
-  const [employeeName, setEmployeeName] = useState('');
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const matchesSearch =
-        searchQuery === '' ||
-        employee.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-      let matchesStatus = true;
-      if (statusFilter !== 'all') {
-        if (statusFilter === 'Active') {
-          matchesStatus = !!employee.currentProjectId;
-        } else if (statusFilter === 'On Vacation') {
-          matchesStatus = employee.status === 'On Vacation';
-        } else if (statusFilter === 'Unassigned') {
-          matchesStatus = !employee.currentProjectId;
-        } else {
-          matchesStatus = employee.status === statusFilter;
-        }
-      }
-
-      const matchesPosition =
-        positionFilter === 'all' || employee.position === positionFilter;
-
-      return matchesSearch && matchesStatus && matchesPosition;
-    });
-  }, [employees, searchQuery, statusFilter, positionFilter]);
-
-  const handleAddEmployee = async () => {
-    if (!employeeName.trim()) return;
-
-    try {
-      await createEmployee({
-        name: employeeName.trim(),
-        position: 'Apprentice',
-        status: 'Unassigned',
-      });
-      setShowAddDialog(false);
-      setEmployeeName('');
-    } catch (error) {
-      console.error('Error creating employee:', error);
-      alert('Failed to create employee');
-    }
-  };
-
-  const handleEditEmployee = async () => {
-    if (!employeeName.trim() || !editingEmployee) return;
-
-    try {
-      await updateEmployee(editingEmployee.id, {
-        name: employeeName.trim(),
-      } as any);
-      setShowEditDialog(false);
-      setEmployeeName('');
-      setEditingEmployee(null);
-    } catch (error) {
-      console.error('Error updating employee:', error);
-      alert('Failed to update employee');
-    }
-  };
-
-  const handleOpenEditDialog = (employee: Employee) => {
-    setEditingEmployee(employee);
-    setEmployeeName(employee.name);
-    setShowEditDialog(true);
-  };
-
-  const handleDeleteEmployee = async () => {
-    if (!editingEmployee) return;
-
-    try {
-      await deleteEmployee(editingEmployee.id);
-      setShowDeleteConfirmDialog(false);
-      setShowEditDialog(false);
-      setEmployeeName('');
-      setEditingEmployee(null);
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      alert('Failed to delete employee');
-    }
-  };
-
-  const handleOpenDeleteConfirm = () => {
-    setShowDeleteConfirmDialog(true);
-  };
+  const {
+    filteredEmployees,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    positionFilter,
+    setPositionFilter,
+    showAddDialog,
+    showEditDialog,
+    showDeleteConfirmDialog,
+    setShowAddDialog,
+    setShowDeleteConfirmDialog,
+    employeeName,
+    setEmployeeName,
+    editingEmployee,
+    handleAddEmployee,
+    handleEditEmployee,
+    handleOpenEditDialog,
+    handleDeleteEmployee,
+    handleOpenDeleteConfirm,
+    handleCloseAddDialog,
+    handleCloseEditDialog,
+  } = useEmployeeList();
 
   if (loading) {
     return (
@@ -140,7 +70,7 @@ export default function EmployeeList() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+
       <div className="p-4 border-b border-gray-300 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">Employees</h2>
         <button
@@ -152,7 +82,6 @@ export default function EmployeeList() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="p-4 border-b border-gray-300">
         <EmployeeSearch
           searchQuery={searchQuery}
@@ -160,7 +89,6 @@ export default function EmployeeList() {
         />
       </div>
 
-      {/* Filters */}
       <div className="p-4 border-b border-gray-300">
         <EmployeeFilters
           statusFilter={statusFilter}
@@ -170,7 +98,6 @@ export default function EmployeeList() {
         />
       </div>
 
-      {/* Employee List */}
       <div 
         className="flex-1 overflow-y-auto overflow-x-hidden p-4"
         style={{ 
@@ -182,9 +109,7 @@ export default function EmployeeList() {
           <div className="text-center text-gray-500 mt-8">
             <p>No employees found</p>
             <p className="text-sm mt-2">
-              {employees.length === 0
-                ? 'Add employees in Firebase to see them here'
-                : 'Try adjusting your search or filters'}
+              Try adjusting your search or filters
             </p>
           </div>
         ) : (
@@ -200,13 +125,8 @@ export default function EmployeeList() {
         )}
       </div>
 
-      {/* Add Employee Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(open) => {
-        setShowAddDialog(open);
-        if (!open) {
-          setEmployeeName('');
-        }
-      }}>
+
+      <Dialog open={showAddDialog} onOpenChange={handleCloseAddDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Add Employee</DialogTitle>
@@ -231,18 +151,15 @@ export default function EmployeeList() {
           </div>
           <DialogFooter>
             <button
-              onClick={() => {
-                setShowAddDialog(false);
-                setEmployeeName('');
-              }}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200"
+              onClick={() => handleCloseAddDialog(false)}
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200"
             >
               Cancel
             </button>
             <button
               onClick={handleAddEmployee}
               disabled={!employeeName.trim()}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Employee
             </button>
@@ -251,13 +168,7 @@ export default function EmployeeList() {
       </Dialog>
 
       {/* Edit Employee Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={(open) => {
-        setShowEditDialog(open);
-        if (!open) {
-          setEmployeeName('');
-          setEditingEmployee(null);
-        }
-      }}>
+      <Dialog open={showEditDialog} onOpenChange={handleCloseEditDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-black">Edit Employee</DialogTitle>
@@ -283,25 +194,21 @@ export default function EmployeeList() {
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <button
               onClick={handleOpenDeleteConfirm}
-              className="px-5 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors duration-200 border border-red-200 w-full sm:w-auto"
+              className="px-5 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-full font-medium transition-colors duration-200 border border-red-200 w-full sm:w-auto"
             >
               Delete Employee
             </button>
             <div className="flex gap-2 w-full sm:w-auto">
               <button
-                onClick={() => {
-                  setShowEditDialog(false);
-                  setEmployeeName('');
-                  setEditingEmployee(null);
-                }}
-                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200 flex-1 sm:flex-none"
+                onClick={() => handleCloseEditDialog(false)}
+                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200 flex-1 sm:flex-none"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEditEmployee}
                 disabled={!employeeName.trim()}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
               >
                 Save Changes
               </button>
