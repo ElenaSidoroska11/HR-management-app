@@ -485,6 +485,56 @@ export async function createSupervisor(
   return docRef.id;
 }
 
+export async function updateSupervisor(
+  id: string,
+  updates: Partial<Pick<Supervisor, 'name' | 'email'>>
+): Promise<void> {
+  const docRef = doc(db, 'supervisors', id);
+  const cleanUpdates: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (key === 'name' && typeof value === 'string') {
+      const trimmedName = value.trim();
+      if (trimmedName) {
+        cleanUpdates.name = trimmedName;
+      }
+    } else if (key === 'email') {
+      if (value === undefined) {
+        continue;
+      }
+      if (value === '' || value === null) {
+        cleanUpdates.email = deleteField();
+      } else {
+        cleanUpdates.email = String(value).trim();
+      }
+    }
+  }
+
+  if (Object.keys(cleanUpdates).length > 0) {
+    await updateDoc(docRef, cleanUpdates);
+  }
+
+  if (typeof updates.name === 'string') {
+    const trimmed = updates.name.trim();
+    if (trimmed) {
+      const projects = await getProjectsBySupervisor(id);
+      await Promise.all(
+        projects.map((p) => updateProject(p.id, { supervisorName: trimmed }))
+      );
+    }
+  }
+}
+
+export async function deleteSupervisor(id: string): Promise<void> {
+  const projects = await getProjectsBySupervisor(id);
+  if (projects.length > 0) {
+    throw new Error(
+      `This supervisor has ${projects.length} project(s). Remove or reassign those projects before deleting.`
+    );
+  }
+  await deleteDoc(doc(db, 'supervisors', id));
+}
+
 export function subscribeToSupervisors(
   callback: (supervisors: Supervisor[]) => void,
   constraints?: QueryConstraint[]
