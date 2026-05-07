@@ -11,7 +11,7 @@ import {
   updateProject,
   deleteProject,
 } from '@/lib/firebase/firestore';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import type { Project } from '@/types/project';
 
 interface UseProjectCardProps {
@@ -20,7 +20,6 @@ interface UseProjectCardProps {
 
 export function useProjectCard({ project }: UseProjectCardProps) {
   const { employees, loading } = useProjectAssignments(project.id);
-  const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [employeeToRemove, setEmployeeToRemove] = useState<{
     id: string;
@@ -111,6 +110,7 @@ export function useProjectCard({ project }: UseProjectCardProps) {
   const handleConfirmRemove = async () => {
     if (!employeeToRemove) return;
 
+    const removedName = employeeToRemove.name;
     try {
       const employee = await getEmployee(employeeToRemove.id);
 
@@ -141,10 +141,9 @@ export function useProjectCard({ project }: UseProjectCardProps) {
 
       setShowConfirmDialog(false);
       setEmployeeToRemove(null);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${removedName} removed from ${project.name}`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to remove employee from project. Please try again.',
       });
     }
@@ -157,21 +156,40 @@ export function useProjectCard({ project }: UseProjectCardProps) {
   };
 
   const handleSaveEdit = async () => {
-    if (!editedProjectName.trim() || !editedProjectId.trim()) {
+    const nextName = editedProjectName.trim();
+    const nextId = editedProjectId.trim();
+    if (!nextName || !nextId) {
       return;
     }
+
+    const nameChanged = nextName !== project.name;
+    const idChanged = nextId !== project.projectId;
 
     setIsUpdating(true);
     try {
       await updateProject(project.id, {
-        name: editedProjectName.trim(),
-        projectId: editedProjectId.trim(),
+        name: nextName,
+        projectId: nextId,
       });
       setShowEditDialog(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+
+      if (nameChanged && idChanged) {
+        toast.success('Project updated', {
+          description: `Renamed to ${nextId} ${nextName}`,
+        });
+      } else if (nameChanged) {
+        toast.success('Project name updated', {
+          description: `New name: ${nextName}`,
+        });
+      } else if (idChanged) {
+        toast.success('Project ID updated', {
+          description: `New ID: ${nextId}`,
+        });
+      } else {
+        toast.success('Project updated');
+      }
+    } catch {
+      toast.error('Error', {
         description: 'Failed to update project. Please try again.',
       });
     } finally {
@@ -180,14 +198,14 @@ export function useProjectCard({ project }: UseProjectCardProps) {
   };
 
   const handleDeleteProject = async () => {
+    const deletedLabel = `${project.projectId} ${project.name}`.trim();
     setIsDeleting(true);
     try {
       await deleteProject(project.id);
       setShowDeleteDialog(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${deletedLabel} deleted`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to delete project. Please try again.',
       });
     } finally {

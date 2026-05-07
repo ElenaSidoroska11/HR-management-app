@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { subscribeToEmployees, updateEmployee } from '@/lib/firebase/firestore';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
 
 // Helper function to convert Firestore Timestamp or Date to Date
@@ -19,10 +19,7 @@ const toDate = (date: Date | any): Date => {
 };
 
 // Check if vacation has ended and update employee status if needed
-const checkAndUpdateVacationStatus = async (
-  employee: Employee,
-  toast: (props: { variant: 'destructive'; title: string; description: string }) => void
-) => {
+const checkAndUpdateVacationStatus = async (employee: Employee) => {
   // Only check employees with "On Vacation" status and vacation end date
   if (employee.status !== 'On Vacation' || !employee.vacationEndDate) {
     return;
@@ -39,17 +36,15 @@ const checkAndUpdateVacationStatus = async (
     if (vacationEndDate <= today) {
       // Determine new status based on whether employee has a project
       const newStatus = employee.currentProjectId ? 'Active' : 'Unassigned';
-      
+
       await updateEmployee(employee.id, {
         status: newStatus,
         vacationStartDate: undefined,
         vacationEndDate: undefined,
       } as any);
     }
-  } catch (error) {
-    toast({
-      variant: 'destructive',
-      title: 'Error',
+  } catch {
+    toast.error('Error', {
       description: `Failed to update vacation status for employee ${employee.name}. Please try again.`,
     });
   }
@@ -59,7 +54,6 @@ export function useEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -70,7 +64,7 @@ export function useEmployees() {
 
         // Check and update vacation status for all employees
         fetchedEmployees.forEach((employee) => {
-          checkAndUpdateVacationStatus(employee, toast);
+          checkAndUpdateVacationStatus(employee);
         });
       });
 
@@ -79,7 +73,7 @@ export function useEmployees() {
       setError(err instanceof Error ? err : new Error('Failed to load employees'));
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   return { employees, loading, error };
 }

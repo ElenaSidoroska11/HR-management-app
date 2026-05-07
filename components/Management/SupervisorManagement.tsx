@@ -5,13 +5,12 @@ import { Pencil, Trash2, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useSupervisors } from "@/lib/hooks/useSupervisors";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "sonner";
 import { createSupervisor, updateSupervisor, deleteSupervisor } from "@/lib/firebase/firestore";
 import type { Supervisor } from "@/types/supervisor";
 
 export default function SupervisorManagement() {
   const { supervisors, loading, error } = useSupervisors();
-  const { toast } = useToast();
 
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -61,12 +60,10 @@ export default function SupervisorManagement() {
         email: trimmedNewEmail,
       });
       resetAddForm();
-      toast({ title: "Supervisor added" });
+      toast.success("Supervisor added");
     } catch {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not add supervisor. Please try again.",
+      toast.error("Could not add supervisor", {
+        description: "Please try again.",
       });
     } finally {
       setIsCreating(false);
@@ -83,9 +80,7 @@ export default function SupervisorManagement() {
     if (!editing) return;
     const name = editName.trim();
     if (!name) {
-      toast({
-        variant: "destructive",
-        title: "Name required",
+      toast.error("Name required", {
         description: "Please enter a supervisor name.",
       });
       return;
@@ -98,12 +93,10 @@ export default function SupervisorManagement() {
         email: editEmail.trim(),
       });
       setEditing(null);
-      toast({ title: "Supervisor updated" });
+      toast.success("Supervisor updated");
     } catch {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not update supervisor. Please try again.",
+      toast.error("Could not update supervisor", {
+        description: "Please try again.",
       });
     } finally {
       setIsSavingEdit(false);
@@ -116,12 +109,10 @@ export default function SupervisorManagement() {
     try {
       await deleteSupervisor(deleting.id);
       setDeleting(null);
-      toast({ title: "Supervisor removed" });
+      toast.success("Supervisor removed");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not delete supervisor.";
-      toast({
-        variant: "destructive",
-        title: "Cannot delete",
+      toast.error("Cannot delete", {
         description: message,
       });
     } finally {

@@ -21,13 +21,12 @@ import {
   getProject,
 } from "@/lib/firebase/firestore";
 import { useEmployees } from "@/lib/hooks/useEmployees";
-import { useToast } from "@/lib/hooks/use-toast";
+import { toast } from "sonner";
 import type { Employee } from "@/types/employee";
 
 export default function Home() {
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const { employees } = useEmployees();
-  const { toast } = useToast();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -82,10 +81,8 @@ export default function Home() {
           totalEmployees: activeAssignments.length,
         } as any);
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+    } catch {
+      toast.error("Error", {
         description: "Failed to assign employee to project. Please try again.",
       });
     }

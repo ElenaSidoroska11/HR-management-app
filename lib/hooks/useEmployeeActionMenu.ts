@@ -9,7 +9,7 @@ import {
   updateEmployee,
   createVacation,
 } from '@/lib/firebase/firestore';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
 
 interface UseEmployeeActionMenuProps {
@@ -24,7 +24,6 @@ export function useEmployeeActionMenu({
   onClose,
 }: UseEmployeeActionMenuProps) {
   const { projects } = useProjects();
-  const { toast } = useToast();
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
@@ -84,6 +83,9 @@ export function useEmployeeActionMenu({
   const handleAssignToProject = async () => {
     if (!selectedProjectId) return;
 
+    const targetProject = projects.find((p) => p.id === selectedProjectId);
+    const projectName = targetProject?.name ?? 'project';
+
     try {
       const existingAssignments = await getAssignmentsByEmployee(employee.id);
       const alreadyAssigned = existingAssignments.some(
@@ -93,6 +95,7 @@ export function useEmployeeActionMenu({
       );
 
       if (alreadyAssigned) {
+        toast.warning(`Already assigned to ${projectName}`);
         return;
       }
 
@@ -110,10 +113,9 @@ export function useEmployeeActionMenu({
       setShowAssignModal(false);
       setSelectedProjectId('');
       onClose();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${employee.name} assigned to ${projectName}`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to assign employee to project. Please try again.',
       });
     }
@@ -121,6 +123,9 @@ export function useEmployeeActionMenu({
 
   const handleTransfer = async () => {
     if (!selectedProjectId) return;
+
+    const targetProject = projects.find((p) => p.id === selectedProjectId);
+    const projectName = targetProject?.name ?? 'new project';
 
     try {
       // Remove from current project
@@ -148,10 +153,9 @@ export function useEmployeeActionMenu({
       setShowTransferModal(false);
       setSelectedProjectId('');
       onClose();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${employee.name} transferred to ${projectName}`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to transfer employee. Please try again.',
       });
     }
@@ -179,10 +183,9 @@ export function useEmployeeActionMenu({
       setVacationStartDate('');
       setVacationEndDate('');
       onClose();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`Vacation scheduled for ${employee.name}`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to schedule vacation. Please try again.',
       });
     }
@@ -210,10 +213,9 @@ export function useEmployeeActionMenu({
       } as any);
 
       setShowRemoveConfirmDialog(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${employee.name} removed from project`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to remove employee from project. Please try again.',
       });
     }
@@ -239,10 +241,9 @@ export function useEmployeeActionMenu({
       setShowNoteModal(false);
       setNoteText('');
       onClose();
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`Note saved for ${employee.name}`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to save note. Please try again.',
       });
     }

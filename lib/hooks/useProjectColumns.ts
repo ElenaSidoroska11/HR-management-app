@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useProjects } from './useProjects';
 import { useSupervisors } from './useSupervisors';
 import { createProject } from '@/lib/firebase/firestore';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import type { Project } from '@/types/project';
 import type { Supervisor as SupervisorType } from '@/types/supervisor';
 
@@ -17,7 +17,6 @@ interface Supervisor {
 export function useProjectColumns() {
   const { projects, loading: projectsLoading, error: projectsError } = useProjects();
   const { supervisors: allSupervisors, loading: supervisorsLoading } = useSupervisors();
-  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
@@ -65,11 +64,12 @@ export function useProjectColumns() {
       return;
     }
 
+    const trimmedName = projectName.trim();
     setIsCreating(true);
     try {
       await createProject({
-        projectId: projectName.trim(),
-        name: projectName.trim(),
+        projectId: trimmedName,
+        name: trimmedName,
         supervisorId: selectedSupervisorId,
         supervisorName: selectedSupervisor.name,
         totalEmployees: 0,
@@ -78,10 +78,9 @@ export function useProjectColumns() {
       setProjectName('');
       setSelectedSupervisorId('');
       setShowCreateDialog(false);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`Project "${trimmedName}" created`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to create project. Please try again.',
       });
     } finally {

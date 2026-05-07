@@ -3,12 +3,11 @@
 import { useState, useMemo } from 'react';
 import { useEmployees } from './useEmployees';
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/firebase/firestore';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
 
 export function useEmployeeList() {
   const { employees, loading, error } = useEmployees();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
@@ -44,39 +43,48 @@ export function useEmployeeList() {
   }, [employees, searchQuery, statusFilter, positionFilter]);
 
   const handleAddEmployee = async () => {
-    if (!employeeName.trim()) return;
+    const name = employeeName.trim();
+    if (!name) return;
 
     try {
       await createEmployee({
-        name: employeeName.trim(),
+        name,
         position: 'Apprentice',
         status: 'Unassigned',
       });
       setShowAddDialog(false);
       setEmployeeName('');
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${name} Employee added`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to create employee. Please try again.',
       });
     }
   };
 
   const handleEditEmployee = async () => {
-    if (!employeeName.trim() || !editingEmployee) return;
+    const name = employeeName.trim();
+    if (!name || !editingEmployee) return;
+
+    const nameChanged = name !== editingEmployee.name;
 
     try {
       await updateEmployee(editingEmployee.id, {
-        name: employeeName.trim(),
+        name,
       } as any);
       setShowEditDialog(false);
       setEmployeeName('');
       setEditingEmployee(null);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+
+      if (nameChanged) {
+        toast.success('Employee updated', {
+          description: `New name: ${name}`,
+        });
+      } else {
+        toast.success('Employee updated');
+      }
+    } catch {
+      toast.error('Error', {
         description: 'Failed to update employee. Please try again.',
       });
     }
@@ -91,16 +99,16 @@ export function useEmployeeList() {
   const handleDeleteEmployee = async () => {
     if (!editingEmployee) return;
 
+    const removedName = editingEmployee.name;
     try {
       await deleteEmployee(editingEmployee.id);
       setShowDeleteConfirmDialog(false);
       setShowEditDialog(false);
       setEmployeeName('');
       setEditingEmployee(null);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
+      toast.success(`${removedName} Employee removed`);
+    } catch {
+      toast.error('Error', {
         description: 'Failed to delete employee. Please try again.',
       });
     }
