@@ -50,7 +50,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       ref={setNodeRef}
       className={`bg-white rounded-lg p-4 border-2 shadow-sm transition-all ${
         isOver
-          ? 'border-blue-500 bg-blue-50 shadow-lg'
+          ? 'border-gray-500 bg-gray-50 shadow-lg'
           : 'border-gray-200'
       }`}
     >
@@ -65,7 +65,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               e.stopPropagation();
               handleEditProject();
             }}
-            className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors rounded"
+            className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded"
             title="Edit project"
           >
             <Pencil className="h-4 w-4" />
@@ -78,8 +78,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
       {/* Drop Zone Indicator */}
       {isOver && (
-        <div className="mb-2 p-2 bg-blue-100 border border-blue-300 rounded text-center">
-          <p className="text-xs text-blue-700 font-medium">
+        <div className="mb-2 p-2 bg-gray-100 border border-gray-300 rounded text-center">
+          <p className="text-xs text-gray-700 font-medium">
             Drop employee here
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                 value={editedProjectId}
                 onChange={(e) => setEditedProjectId(e.target.value)}
                 placeholder="Enter project ID"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black bg-white placeholder:text-gray-400"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-black bg-white placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -154,7 +154,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                 value={editedProjectName}
                 onChange={(e) => setEditedProjectName(e.target.value)}
                 placeholder="Enter project name"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black bg-white placeholder:text-gray-400"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all text-black bg-white placeholder:text-gray-400"
               />
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               <button
                 onClick={handleSaveEdit}
                 disabled={isUpdating}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                className="px-5 py-2.5 bg-gray-600 text-white rounded-full font-medium hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
               >
                 {isUpdating ? 'Saving...' : 'Save'}
               </button>

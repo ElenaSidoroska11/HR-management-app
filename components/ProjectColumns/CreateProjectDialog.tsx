@@ -95,7 +95,7 @@ export default function CreateProjectDialog({
             type="button"
             onClick={onCreate}
             disabled={isCreating}
-            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isCreating ? 'Creating…' : 'Create project'}
           </button>

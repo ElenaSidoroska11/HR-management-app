@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '../ui/input';
 
 
 export default function EmployeeList() {
@@ -135,7 +136,7 @@ export default function EmployeeList() {
             <label className="block text-sm font-medium mb-1 text-black">
               Name
             </label>
-            <input
+            <Input
               type="text"
               value={employeeName}
               onChange={(e) => setEmployeeName(e.target.value)}
@@ -159,7 +160,7 @@ export default function EmployeeList() {
             <button
               onClick={handleAddEmployee}
               disabled={!employeeName.trim()}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Employee
             </button>
