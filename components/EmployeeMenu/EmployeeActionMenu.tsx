@@ -146,7 +146,7 @@ export default function EmployeeActionMenu({
             </button>
             <button
               onClick={handleAssignToProject}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Assign
             </button>
@@ -198,7 +198,7 @@ export default function EmployeeActionMenu({
             </button>
             <button
               onClick={handleTransfer}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Transfer
             </button>
@@ -266,7 +266,7 @@ export default function EmployeeActionMenu({
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               placeholder="Enter note..."
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg h-24 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-black bg-white placeholder:text-gray-400"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg h-24 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all resize-none text-black bg-white placeholder:text-gray-400"
             />
           </div>
           <DialogFooter>
@@ -278,7 +278,7 @@ export default function EmployeeActionMenu({
             </button>
             <button
               onClick={handleAddNote}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               {employee.notes && employee.notes.length > 0 ? 'Save Note' : 'Add Note'}
             </button>

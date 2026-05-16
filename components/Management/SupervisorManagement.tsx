@@ -219,19 +219,11 @@ export default function SupervisorManagement() {
                     )}
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(s)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50">
-                      <Pencil className="h-3.5 w-3.5" aria-hidden />
-                      Edit
+                    <button type="button" onClick={() => openEdit(s)}>
+                      <Pencil className="h-3.5 w-3.5 text-gray-600 hover:text-gray-950 cursor-pointer" aria-hidden />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleting(s)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50">
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                      Delete
+                    <button type="button" onClick={() => setDeleting(s)}>
+                      <Trash2 className="h-3.5 w-3.5 text-red-500 hover:text-red-700 cursor-pointer" aria-hidden />
                     </button>
                   </div>
                 </li>
@@ -282,7 +274,7 @@ export default function SupervisorManagement() {
               type="button"
               onClick={handleSaveEdit}
               disabled={isSavingEdit}
-              className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-md hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md hover:bg-gray-600 disabled:opacity-50">
               {isSavingEdit ? "Saving…" : "Save"}
             </button>
           </DialogFooter>
