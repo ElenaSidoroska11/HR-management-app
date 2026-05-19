@@ -24,7 +24,14 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
   } | null>(null);
   const { assignments } = useEmployeeAssignments(employee.id);
   const { projects } = useProjects();
-  
+
+  const assignedProjectLabel = useMemo(() => {
+    const assignment = assignments[0];
+    if (!assignment) return null;
+    const project = projects.find((p) => p.id === assignment.projectId);
+    return project ? `${project.projectId} ${project.name}` : assignment.projectId;
+  }, [assignments, projects]);
+
   const calculateRemainingVacationDays = useMemo(() => {
     const vacationDaysPerYear = employee.vacationDaysPerYear || 21;
     
@@ -129,22 +136,10 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
               </span>
             </div>
           )}
-          {assignments.length > 0 ? (
-            <div className="mt-1">
-              <p className="text-sm text-gray-600">
-                Assigned to {assignments.length === 1 ? 'Project' : 'Projects'}:
-              </p>
-              <div className="mt-0.5 space-y-0.5">
-                {assignments.map((assignment) => {
-                  const project = projects.find((p) => p.id === assignment.projectId);
-                  return (
-                    <p key={assignment.id} className="text-xs text-gray-600">
-                      • {project ? `${project.projectId} ${project.name}` : assignment.projectId}
-                    </p>
-                  );
-                })}
-              </div>
-            </div>
+          {assignedProjectLabel ? (
+            <p className="text-sm text-gray-600 mt-1">
+              Assigned to Project: {assignedProjectLabel}
+            </p>
           ) : (
             <p className="text-sm text-gray-600 mt-1">Unassigned</p>
           )}

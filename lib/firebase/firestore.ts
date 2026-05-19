@@ -289,7 +289,7 @@ export async function getAssignmentsByProject(projectId: string): Promise<Assign
 }
 
 export async function createAssignment(
-  assignmentData: Omit<Assignment, 'id' | 'createdAt' | 'updatedAt'>
+  assignmentData: Omit<Assignment, 'id' | 'createdAt' | 'updatedAt' | 'assignedAt'>
 ): Promise<string> {
   const docRef = await addDoc(assignmentsCollection, {
     ...assignmentData,
@@ -318,6 +318,50 @@ export async function removeAssignment(id: string): Promise<void> {
     removedAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   });
+}
+
+export type AssignEmployeeResult = 'assigned' | 'transferred' | 'already_assigned';
+
+/** Assigns an employee to exactly one project, removing any existing active assignments. */
+export async function assignEmployeeToProject(
+  employeeId: string,
+  projectId: string
+): Promise<AssignEmployeeResult> {
+  const existingAssignments = await getAssignmentsByEmployee(employeeId);
+
+  if (existingAssignments.some((assignment) => assignment.projectId === projectId)) {
+    return 'already_assigned';
+  }
+
+  const isTransfer = existingAssignments.length > 0;
+  const affectedProjectIds = new Set(
+    existingAssignments.map((assignment) => assignment.projectId)
+  );
+  affectedProjectIds.add(projectId);
+
+  for (const assignment of existingAssignments) {
+    await removeAssignment(assignment.id);
+  }
+
+  await createAssignment({
+    employeeId,
+    projectId,
+    hours: 0,
+    status: 'Active',
+  });
+
+  await updateEmployee(employeeId, {
+    currentProjectId: projectId,
+  } as Partial<Employee>);
+
+  for (const affectedProjectId of affectedProjectIds) {
+    const activeAssignments = await getAssignmentsByProject(affectedProjectId);
+    await updateProject(affectedProjectId, {
+      totalEmployees: activeAssignments.length,
+    } as Partial<Project>);
+  }
+
+  return isTransfer ? 'transferred' : 'assigned';
 }
 
 export function subscribeToAssignmentsByProject(

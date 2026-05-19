@@ -37,6 +37,7 @@ export default function EmployeeActionMenu({
   const {
     menuRef,
     currentProject,
+    hasActiveAssignments,
     availableProjectsForTransfer,
     availableProjectsForAssignment,
     showAssignModal,
@@ -86,13 +87,15 @@ export default function EmployeeActionMenu({
         top: `${menuPosition.top}px`,
       }}
     >
-        <button
-          onClick={handleOpenAssignModal}
-          className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
-        >
-          Assign to Project
-        </button>
-        {employee.currentProjectId && (
+        {!hasActiveAssignments && (
+          <button
+            onClick={handleOpenAssignModal}
+            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
+          >
+            Assign to Project
+          </button>
+        )}
+        {hasActiveAssignments && (
           <button
             onClick={handleOpenTransferModal}
             className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
@@ -108,7 +111,7 @@ export default function EmployeeActionMenu({
             Schedule Vacation
           </button>
         )}
-        {employee.currentProjectId && (
+        {hasActiveAssignments && (
           <button
             onClick={handleRemoveFromProject}
             className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-sm"
@@ -309,7 +312,9 @@ export default function EmployeeActionMenu({
             <p className="text-gray-700">
               Are you sure you want to remove <strong>{employee.name}</strong> from project{' '}
               {currentProject && (
-                <strong>{currentProject.projectId} {currentProject.name}</strong>
+                <strong>
+                  {currentProject.projectId} {currentProject.name}
+                </strong>
               )}
               ?
             </p>

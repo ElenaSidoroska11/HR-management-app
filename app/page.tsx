@@ -12,14 +12,7 @@ import {
 } from "@dnd-kit/core";
 import EmployeeList from "@/components/EmployeeList/EmployeeList";
 import MainWorkspace from "@/components/Workspace/MainWorkspace";
-import {
-  createAssignment,
-  getAssignmentsByEmployee,
-  getAssignmentsByProject,
-  updateEmployee,
-  updateProject,
-  getProject,
-} from "@/lib/firebase/firestore";
+import { assignEmployeeToProject, getProject } from "@/lib/firebase/firestore";
 import { useEmployees } from "@/lib/hooks/useEmployees";
 import { toast } from "sonner";
 import type { Employee } from "@/types/employee";
@@ -53,34 +46,32 @@ export default function Home() {
     const employeeId = active.id as string;
     const projectId = over.id as string;
 
-    const existingAssignments = await getAssignmentsByEmployee(employeeId);
-    const alreadyAssigned = existingAssignments.some(
-      (assignment) => assignment.projectId === projectId && assignment.status === "Active",
-    );
-
-    if (alreadyAssigned) {
-      return;
-    }
+    const employee = employees.find((emp) => emp.id === employeeId);
+    const project = await getProject(projectId);
+    const projectLabel = project
+      ? `${project.projectId} ${project.name}`.trim()
+      : "this project";
 
     try {
-      await createAssignment({
-        employeeId,
-        projectId,
-        hours: 0,
-        status: "Active",
-      } as any);
+      const result = await assignEmployeeToProject(employeeId, projectId);
 
-      await updateEmployee(employeeId, {
-        currentProjectId: projectId,
-      } as any);
-
-      const project = await getProject(projectId);
-      if (project) {
-        const activeAssignments = await getAssignmentsByProject(projectId);
-        await updateProject(projectId, {
-          totalEmployees: activeAssignments.length,
-        } as any);
+      if (result === "already_assigned") {
+        toast.warning(
+          `${employee?.name ?? "Employee"} is already assigned to ${projectLabel}`,
+        );
+        return;
       }
+
+      if (result === "transferred") {
+        toast.success(
+          `${employee?.name ?? "Employee"} transferred to ${projectLabel}`,
+        );
+        return;
+      }
+
+      toast.success(
+        `${employee?.name ?? "Employee"} assigned to ${projectLabel}`,
+      );
     } catch {
       toast.error("Error", {
         description: "Failed to assign employee to project. Please try again.",

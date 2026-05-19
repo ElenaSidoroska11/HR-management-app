@@ -2,12 +2,15 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useProjects } from './useProjects';
+import { useEmployeeAssignments } from './useAssignments';
 import {
-  createAssignment,
+  assignEmployeeToProject,
   getAssignmentsByEmployee,
   removeAssignment,
   updateEmployee,
   createVacation,
+  getAssignmentsByProject,
+  updateProject,
 } from '@/lib/firebase/firestore';
 import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
@@ -24,6 +27,7 @@ export function useEmployeeActionMenu({
   onClose,
 }: UseEmployeeActionMenuProps) {
   const { projects } = useProjects();
+  const { assignments } = useEmployeeAssignments(employee.id);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
@@ -35,19 +39,31 @@ export function useEmployeeActionMenu({
   const [noteText, setNoteText] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const activeAssignments = useMemo(
+    () => assignments.filter((assignment) => assignment.status === 'Active'),
+    [assignments]
+  );
+
+  const assignedProjectIds = useMemo(
+    () => new Set(activeAssignments.map((assignment) => assignment.projectId)),
+    [activeAssignments]
+  );
+
+  const hasActiveAssignments = activeAssignments.length > 0;
+
   const currentProject = useMemo(() => {
-    return employee.currentProjectId
-      ? projects.find((p) => p.id === employee.currentProjectId)
-      : null;
-  }, [employee.currentProjectId, projects]);
+    const assignment = activeAssignments[0];
+    if (!assignment) return null;
+    return projects.find((project) => project.id === assignment.projectId) ?? null;
+  }, [activeAssignments, projects]);
 
   const availableProjectsForTransfer = useMemo(() => {
-    return projects.filter((p) => p.id !== employee.currentProjectId);
-  }, [projects, employee.currentProjectId]);
+    return projects.filter((project) => !assignedProjectIds.has(project.id));
+  }, [projects, assignedProjectIds]);
 
   const availableProjectsForAssignment = useMemo(() => {
-    return projects.filter((p) => p.id !== employee.currentProjectId);
-  }, [projects, employee.currentProjectId]);
+    return projects.filter((project) => !assignedProjectIds.has(project.id));
+  }, [projects, assignedProjectIds]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,28 +103,11 @@ export function useEmployeeActionMenu({
     const projectName = targetProject?.name ?? 'project';
 
     try {
-      const existingAssignments = await getAssignmentsByEmployee(employee.id);
-      const alreadyAssigned = existingAssignments.some(
-        (assignment) =>
-          assignment.projectId === selectedProjectId &&
-          assignment.status === 'Active'
-      );
-
-      if (alreadyAssigned) {
-        toast.warning(`Already assigned to ${projectName}`);
+      const result = await assignEmployeeToProject(employee.id, selectedProjectId);
+      if (result === 'already_assigned') {
+        toast.warning(`${employee.name} is already assigned to ${projectName}`);
         return;
       }
-
-      await createAssignment({
-        employeeId: employee.id,
-        projectId: selectedProjectId,
-        hours: 0,
-        status: 'Active',
-      } as any);
-
-      await updateEmployee(employee.id, {
-        currentProjectId: selectedProjectId,
-      } as any);
 
       setShowAssignModal(false);
       setSelectedProjectId('');
@@ -128,27 +127,11 @@ export function useEmployeeActionMenu({
     const projectName = targetProject?.name ?? 'new project';
 
     try {
-      // Remove from current project
-      const existingAssignments = await getAssignmentsByEmployee(employee.id);
-      const activeAssignments = existingAssignments.filter(
-        (a) => a.status === 'Active'
-      );
-
-      for (const assignment of activeAssignments) {
-        await removeAssignment(assignment.id);
+      const result = await assignEmployeeToProject(employee.id, selectedProjectId);
+      if (result === 'already_assigned') {
+        toast.warning(`${employee.name} is already assigned to ${projectName}`);
+        return;
       }
-
-      // Assign to new project
-      await createAssignment({
-        employeeId: employee.id,
-        projectId: selectedProjectId,
-        hours: 0,
-        status: 'Active',
-      } as any);
-
-      await updateEmployee(employee.id, {
-        currentProjectId: selectedProjectId,
-      } as any);
 
       setShowTransferModal(false);
       setSelectedProjectId('');
@@ -203,6 +186,10 @@ export function useEmployeeActionMenu({
         (a) => a.status === 'Active'
       );
 
+      const affectedProjectIds = new Set(
+        activeAssignments.map((assignment) => assignment.projectId)
+      );
+
       for (const assignment of activeAssignments) {
         await removeAssignment(assignment.id);
       }
@@ -211,6 +198,13 @@ export function useEmployeeActionMenu({
         currentProjectId: undefined,
         status: 'Unassigned',
       } as any);
+
+      for (const projectId of affectedProjectIds) {
+        const projectAssignments = await getAssignmentsByProject(projectId);
+        await updateProject(projectId, {
+          totalEmployees: projectAssignments.length,
+        } as any);
+      }
 
       setShowRemoveConfirmDialog(false);
       toast.success(`${employee.name} removed from project`);
@@ -222,21 +216,33 @@ export function useEmployeeActionMenu({
   };
 
   const handleAddNote = async () => {
-    if (!noteText.trim()) return;
+    const trimmedNote = noteText.trim();
+    const hasExistingNotes = (employee.notes || []).length > 0;
+
+    if (!trimmedNote) {
+      if (!hasExistingNotes) return;
+
+      try {
+        await updateEmployee(employee.id, {
+          notes: undefined,
+        } as Partial<Employee>);
+
+        setShowNoteModal(false);
+        setNoteText('');
+        onClose();
+        toast.success(`Note removed for ${employee.name}`);
+      } catch {
+        toast.error('Error', {
+          description: 'Failed to remove note. Please try again.',
+        });
+      }
+      return;
+    }
 
     try {
-      const currentNotes = employee.notes || [];
-      const hasExistingNotes = currentNotes.length > 0;
-
-      if (hasExistingNotes) {
-        await updateEmployee(employee.id, {
-          notes: [noteText],
-        } as any);
-      } else {
-        await updateEmployee(employee.id, {
-          notes: [...currentNotes, noteText],
-        } as any);
-      }
+      await updateEmployee(employee.id, {
+        notes: [trimmedNote],
+      } as Partial<Employee>);
 
       setShowNoteModal(false);
       setNoteText('');
@@ -308,6 +314,7 @@ export function useEmployeeActionMenu({
   return {
     menuRef,
     currentProject,
+    hasActiveAssignments,
     availableProjectsForTransfer,
     availableProjectsForAssignment,
     showAssignModal,
