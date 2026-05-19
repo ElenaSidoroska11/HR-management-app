@@ -57,7 +57,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             }}
             className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded"
             title="Edit project">
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 text-gray-600 hover:text-gray-950 cursor-pointer" />
           </button>
         </div>
         <p className="text-sm text-gray-600 mt-1">Total employees: {project.totalEmployees}</p>

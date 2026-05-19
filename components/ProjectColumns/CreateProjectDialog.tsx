@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,31 @@ export default function CreateProjectDialog({
   isCreating,
   onCreate,
 }: CreateProjectDialogProps) {
+  const [nameTouched, setNameTouched] = useState(false);
+  const [supervisorTouched, setSupervisorTouched] = useState(false);
+
+  const trimmedProjectName = projectName.trim();
+  const projectNameError =
+    nameTouched && !trimmedProjectName ? 'Project name is required.' : '';
+  const supervisorError =
+    supervisorTouched && !selectedSupervisorId ? 'Supervisor is required.' : '';
+
+  useEffect(() => {
+    if (!open) {
+      setNameTouched(false);
+      setSupervisorTouched(false);
+    }
+  }, [open]);
+
+  const handleCreate = () => {
+    setNameTouched(true);
+    setSupervisorTouched(true);
+    if (!trimmedProjectName || !selectedSupervisorId) {
+      return;
+    }
+    onCreate();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -55,9 +81,17 @@ export default function CreateProjectDialog({
               id="create-project-name"
               value={projectName}
               onChange={(e) => onProjectNameChange(e.target.value)}
+              onBlur={() => setNameTouched(true)}
               placeholder="Enter project name"
-              className="bg-white text-gray-900"
+              aria-invalid={!!projectNameError}
+              aria-describedby={projectNameError ? 'create-project-name-error' : undefined}
+              className={`bg-white text-gray-900 ${projectNameError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             />
+            {projectNameError && (
+              <p id="create-project-name-error" className="text-xs text-red-600">
+                {projectNameError}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <label htmlFor="create-project-supervisor" className="text-sm font-medium text-black">
@@ -65,11 +99,19 @@ export default function CreateProjectDialog({
             </label>
             <Select
               value={selectedSupervisorId || undefined}
-              onValueChange={onSupervisorChange}
+              onValueChange={(value) => {
+                onSupervisorChange(value);
+                setSupervisorTouched(true);
+              }}
             >
               <SelectTrigger
                 id="create-project-supervisor"
-                className="w-full bg-white text-gray-900 border-gray-300 focus:ring-0 focus:ring-offset-0 focus:border-gray-300"
+                onBlur={() => setSupervisorTouched(true)}
+                aria-invalid={!!supervisorError}
+                aria-describedby={supervisorError ? 'create-project-supervisor-error' : undefined}
+                className={`w-full bg-white text-gray-900 border-gray-300 focus:ring-0 focus:ring-offset-0 focus:border-gray-300 ${
+                  supervisorError ? 'border-red-500 focus:border-red-500' : ''
+                }`}
               >
                 <SelectValue placeholder="Select a supervisor" />
               </SelectTrigger>
@@ -81,6 +123,11 @@ export default function CreateProjectDialog({
                 ))}
               </SelectContent>
             </Select>
+            {supervisorError && (
+              <p id="create-project-supervisor-error" className="text-xs text-red-600">
+                {supervisorError}
+              </p>
+            )}
           </div>
         </div>
         <DialogFooter>
@@ -93,9 +140,9 @@ export default function CreateProjectDialog({
           </button>
           <button
             type="button"
-            onClick={onCreate}
+            onClick={handleCreate}
             disabled={isCreating}
-            className="rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg"
           >
             {isCreating ? 'Creating…' : 'Create project'}
           </button>

@@ -21,6 +21,8 @@ export default function SupervisorManagement() {
   const [editing, setEditing] = useState<Supervisor | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editNameTouched, setEditNameTouched] = useState(false);
+  const [editEmailTouched, setEditEmailTouched] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const [deleting, setDeleting] = useState<Supervisor | null>(null);
@@ -35,6 +37,17 @@ export default function SupervisorManagement() {
     ? !trimmedNewEmail
       ? "Email is required."
       : !EMAIL_REGEX.test(trimmedNewEmail)
+        ? "Enter a valid email address."
+        : ""
+    : "";
+
+  const trimmedEditName = editName.trim();
+  const trimmedEditEmail = editEmail.trim();
+  const editNameError = editNameTouched && !trimmedEditName ? "Name is required." : "";
+  const editEmailError = editEmailTouched
+    ? !trimmedEditEmail
+      ? "Email is required."
+      : !EMAIL_REGEX.test(trimmedEditEmail)
         ? "Enter a valid email address."
         : ""
     : "";
@@ -74,25 +87,31 @@ export default function SupervisorManagement() {
     setEditing(s);
     setEditName(s.name);
     setEditEmail(typeof s.email === "string" ? s.email : "");
+    setEditNameTouched(false);
+    setEditEmailTouched(false);
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setEditNameTouched(false);
+    setEditEmailTouched(false);
   };
 
   const handleSaveEdit = async () => {
     if (!editing) return;
-    const name = editName.trim();
-    if (!name) {
-      toast.error("Name required", {
-        description: "Please enter a supervisor name.",
-      });
+    setEditNameTouched(true);
+    setEditEmailTouched(true);
+    if (!trimmedEditName || !trimmedEditEmail || !EMAIL_REGEX.test(trimmedEditEmail)) {
       return;
     }
 
     setIsSavingEdit(true);
     try {
       await updateSupervisor(editing.id, {
-        name,
-        email: editEmail.trim(),
+        name: trimmedEditName,
+        email: trimmedEditEmail,
       });
-      setEditing(null);
+      closeEdit();
       toast.success("Supervisor updated");
     } catch {
       toast.error("Could not update supervisor", {
@@ -220,10 +239,10 @@ export default function SupervisorManagement() {
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <button type="button" onClick={() => openEdit(s)}>
-                      <Pencil className="h-3.5 w-3.5 text-gray-600 hover:text-gray-950 cursor-pointer" aria-hidden />
+                      <Pencil className="h-4 w-4 text-gray-600 hover:text-gray-950 cursor-pointer" aria-hidden />
                     </button>
                     <button type="button" onClick={() => setDeleting(s)}>
-                      <Trash2 className="h-3.5 w-3.5 text-red-500 hover:text-red-700 cursor-pointer" aria-hidden />
+                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 cursor-pointer" aria-hidden />
                     </button>
                   </div>
                 </li>
@@ -233,7 +252,7 @@ export default function SupervisorManagement() {
         </section>
       </div>
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={!!editing} onOpenChange={(open) => !open && closeEdit()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit supervisor</DialogTitle>
@@ -247,26 +266,43 @@ export default function SupervisorManagement() {
                 id="edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="bg-white text-gray-900"
+                onBlur={() => setEditNameTouched(true)}
+                aria-invalid={!!editNameError}
+                aria-describedby={editNameError ? "edit-name-error" : undefined}
+                className={`bg-white text-gray-900 ${editNameError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
               />
+              {editNameError && (
+                <p id="edit-name-error" className="text-xs text-red-600">
+                  {editNameError}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <label htmlFor="edit-email" className="text-sm font-medium text-gray-800">
-                Email <span className="font-normal text-gray-500">(optional)</span>
+                Email
               </label>
               <Input
                 id="edit-email"
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
-                className="bg-white text-gray-900"
+                onBlur={() => setEditEmailTouched(true)}
+                placeholder="name@company.com"
+                aria-invalid={!!editEmailError}
+                aria-describedby={editEmailError ? "edit-email-error" : undefined}
+                className={`bg-white text-gray-900 ${editEmailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
               />
+              {editEmailError && (
+                <p id="edit-email-error" className="text-xs text-red-600">
+                  {editEmailError}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <button
               type="button"
-              onClick={() => setEditing(null)}
+              onClick={closeEdit}
               className="rounded-full bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
               Cancel
             </button>

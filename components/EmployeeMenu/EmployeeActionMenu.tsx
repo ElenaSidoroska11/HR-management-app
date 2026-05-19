@@ -108,12 +108,14 @@ export default function EmployeeActionMenu({
             Schedule Vacation
           </button>
         )}
-        <button
-          onClick={handleRemoveFromProject}
-          className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-sm"
-        >
-          Remove from Project
-        </button>
+        {employee.currentProjectId && (
+          <button
+            onClick={handleRemoveFromProject}
+            className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-sm"
+          >
+            Remove from Project
+          </button>
+        )}
         <button
           onClick={handleOpenNoteModal}
           className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-sm"
@@ -256,7 +258,7 @@ export default function EmployeeActionMenu({
             </button>
             <button
               onClick={handleScheduleVacation}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Schedule
             </button>

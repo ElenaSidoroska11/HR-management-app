@@ -114,7 +114,7 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
                 className="text-gray-400 hover:text-gray-600 p-0.5 transition-colors"
                 title="Edit employee name"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-4 w-4 text-gray-600 hover:text-gray-950 cursor-pointer" />
               </button>
             )}
             <span className="text-sm text-gray-500">
