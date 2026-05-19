@@ -16,7 +16,12 @@ interface EmployeeCardProps {
 
 export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [menuAnchorRect, setMenuAnchorRect] = useState<{
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+  } | null>(null);
   const { assignments } = useEmployeeAssignments(employee.id);
   const { projects } = useProjects();
   
@@ -157,9 +162,11 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
           onClick={(e) => {
             e.stopPropagation();
             const rect = e.currentTarget.getBoundingClientRect();
-            setMenuPosition({
-              x: rect.left - 180, 
-              y: rect.top + rect.height,
+            setMenuAnchorRect({
+              top: rect.top,
+              left: rect.left,
+              right: rect.right,
+              bottom: rect.bottom,
             });
             setMenuOpen(true);
           }}
@@ -173,8 +180,11 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
       <EmployeeActionMenu
         employee={employee}
         isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        position={menuPosition}
+        onClose={() => {
+          setMenuOpen(false);
+          setMenuAnchorRect(null);
+        }}
+        anchorRect={menuAnchorRect}
       />
     </div>
   );

@@ -1,8 +1,10 @@
 'use client';
 
+import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Employee } from '@/types/employee';
 import { useEmployeeActionMenu } from '@/lib/hooks/useEmployeeActionMenu';
+import { getFloatingMenuPosition, type AnchorRect } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -22,15 +24,16 @@ interface EmployeeActionMenuProps {
   employee: Employee;
   isOpen: boolean;
   onClose: () => void;
-  position: { x: number; y: number };
+  anchorRect: AnchorRect | null;
 }
 
 export default function EmployeeActionMenu({
   employee,
   isOpen,
   onClose,
-  position,
+  anchorRect,
 }: EmployeeActionMenuProps) {
+  const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 });
   const {
     menuRef,
     currentProject,
@@ -66,13 +69,21 @@ export default function EmployeeActionMenu({
     handleOpenVacationModal,
   } = useEmployeeActionMenu({ employee, isOpen, onClose });
 
-  const menuContent = isOpen ? (
+  useLayoutEffect(() => {
+    if (!isOpen || !anchorRect || !menuRef.current) return;
+
+    const menu = menuRef.current;
+    const { width, height } = menu.getBoundingClientRect();
+    setMenuPosition(getFloatingMenuPosition(anchorRect, width, height));
+  }, [isOpen, anchorRect, employee.currentProjectId, employee.status]);
+
+  const menuContent = isOpen && anchorRect ? (
     <div
       ref={menuRef}
       className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-9999 w-48 py-1"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        left: `${menuPosition.left}px`,
+        top: `${menuPosition.top}px`,
       }}
     >
         <button

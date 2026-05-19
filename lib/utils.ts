@@ -24,3 +24,33 @@ export function getPositionBgColor(position: EmployeePosition | undefined): stri
   return positionColors[position] || 'bg-gray-50';
 }
 
+export interface AnchorRect {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}
+
+/** Position a floating menu next to an anchor, flipping above when needed. */
+export function getFloatingMenuPosition(
+  anchor: AnchorRect,
+  menuWidth: number,
+  menuHeight: number,
+  options?: { padding?: number; gap?: number }
+): { left: number; top: number } {
+  const padding = options?.padding ?? 8;
+  const gap = options?.gap ?? 4;
+
+  let left = anchor.right - menuWidth;
+  let top = anchor.bottom + gap;
+
+  if (top + menuHeight > window.innerHeight - padding) {
+    top = anchor.top - menuHeight - gap;
+  }
+
+  left = Math.max(padding, Math.min(left, window.innerWidth - menuWidth - padding));
+  top = Math.max(padding, Math.min(top, window.innerHeight - menuHeight - padding));
+
+  return { left, top };
+}
+
