@@ -6,6 +6,35 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Case-insensitive trimmed comparison for display names. */
+export function normalizeDisplayName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/**
+ * Returns true if `candidate` matches an existing name (case-insensitive).
+ * Pass `excludeName` when editing so the current record is not treated as a duplicate.
+ */
+export function isDuplicateDisplayName(
+  candidate: string,
+  existingNames: Iterable<string>,
+  excludeName?: string
+): boolean {
+  const normalized = normalizeDisplayName(candidate);
+  if (!normalized) return false;
+
+  const excluded = excludeName ? normalizeDisplayName(excludeName) : undefined;
+
+  for (const existing of existingNames) {
+    const normalizedExisting = normalizeDisplayName(existing);
+    if (!normalizedExisting) continue;
+    if (excluded && normalizedExisting === excluded) continue;
+    if (normalizedExisting === normalized) return true;
+  }
+
+  return false;
+}
+
 /**
  * Get background color class for employee position
  * @param position - Employee position

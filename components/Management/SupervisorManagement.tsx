@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, UserPlus } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useSupervisors } from "@/lib/hooks/useSupervisors";
 import { toast } from "sonner";
 import { createSupervisor, updateSupervisor, deleteSupervisor } from "@/lib/firebase/firestore";
+import { isDuplicateDisplayName } from "@/lib/utils";
 import type { Supervisor } from "@/types/supervisor";
 import { Button } from "../ui/button";
 
@@ -14,56 +15,38 @@ export default function SupervisorManagement() {
   const { supervisors, loading, error } = useSupervisors();
 
   const [newName, setNewName] = useState("");
-  const [newEmail, setNewEmail] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
-  const [emailTouched, setEmailTouched] = useState(false);
 
   const [editing, setEditing] = useState<Supervisor | null>(null);
   const [editName, setEditName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
   const [editNameTouched, setEditNameTouched] = useState(false);
-  const [editEmailTouched, setEditEmailTouched] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const [deleting, setDeleting] = useState<Supervisor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   const trimmedNewName = newName.trim();
-  const trimmedNewEmail = newEmail.trim();
   const nameError = nameTouched && !trimmedNewName ? "Name is required." : "";
-  const emailError = emailTouched
-    ? !trimmedNewEmail
-      ? "Email is required."
-      : !EMAIL_REGEX.test(trimmedNewEmail)
-        ? "Enter a valid email address."
-        : ""
-    : "";
 
   const trimmedEditName = editName.trim();
-  const trimmedEditEmail = editEmail.trim();
   const editNameError = editNameTouched && !trimmedEditName ? "Name is required." : "";
-  const editEmailError = editEmailTouched
-    ? !trimmedEditEmail
-      ? "Email is required."
-      : !EMAIL_REGEX.test(trimmedEditEmail)
-        ? "Enter a valid email address."
-        : ""
-    : "";
 
   const resetAddForm = () => {
     setNewName("");
-    setNewEmail("");
     setNameTouched(false);
-    setEmailTouched(false);
   };
 
   const handleCreate = async () => {
     setNameTouched(true);
-    setEmailTouched(true);
-    if (!trimmedNewName || !trimmedNewEmail || !EMAIL_REGEX.test(trimmedNewEmail)) {
+    if (!trimmedNewName) {
+      return;
+    }
+
+    if (isDuplicateDisplayName(trimmedNewName, supervisors.map((s) => s.name))) {
+      toast.error("Name already exists", {
+        description: `A supervisor named "${trimmedNewName}" already exists.`,
+      });
       return;
     }
 
@@ -71,7 +54,6 @@ export default function SupervisorManagement() {
     try {
       await createSupervisor({
         name: trimmedNewName,
-        email: trimmedNewEmail,
       });
       resetAddForm();
       toast.success("Supervisor added");
@@ -87,22 +69,31 @@ export default function SupervisorManagement() {
   const openEdit = (s: Supervisor) => {
     setEditing(s);
     setEditName(s.name);
-    setEditEmail(typeof s.email === "string" ? s.email : "");
     setEditNameTouched(false);
-    setEditEmailTouched(false);
   };
 
   const closeEdit = () => {
     setEditing(null);
     setEditNameTouched(false);
-    setEditEmailTouched(false);
   };
 
   const handleSaveEdit = async () => {
     if (!editing) return;
     setEditNameTouched(true);
-    setEditEmailTouched(true);
-    if (!trimmedEditName || !trimmedEditEmail || !EMAIL_REGEX.test(trimmedEditEmail)) {
+    if (!trimmedEditName) {
+      return;
+    }
+
+    if (
+      isDuplicateDisplayName(
+        trimmedEditName,
+        supervisors.map((s) => s.name),
+        editing.name
+      )
+    ) {
+      toast.error("Name already exists", {
+        description: `A supervisor named "${trimmedEditName}" already exists.`,
+      });
       return;
     }
 
@@ -110,7 +101,6 @@ export default function SupervisorManagement() {
     try {
       await updateSupervisor(editing.id, {
         name: trimmedEditName,
-        email: trimmedEditEmail,
       });
       closeEdit();
       toast.success("Supervisor updated");
@@ -166,11 +156,11 @@ export default function SupervisorManagement() {
 
         <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">Add supervisor</h2>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex-1 space-y-2">
-              <label htmlFor="supervisor-name" className="text-sm font-medium text-gray-800">
-                Name
-              </label>
+          <div className="space-y-2">
+            <label htmlFor="supervisor-name" className="text-sm font-medium text-gray-800">
+              Name
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Input
                 id="supervisor-name"
                 value={newName}
@@ -179,42 +169,26 @@ export default function SupervisorManagement() {
                 placeholder="Full name"
                 aria-invalid={!!nameError}
                 aria-describedby={nameError ? "supervisor-name-error" : undefined}
-                className={`bg-white text-gray-900 mt-1 ${nameError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                className={`flex-1 bg-white text-gray-900 ${nameError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleCreate();
+                  }
+                }}
               />
-              {nameError && (
-                <p id="supervisor-name-error" className="text-xs text-red-600">
-                  {nameError}
-                </p>
-              )}
+              <Button
+                type="button"
+                onClick={handleCreate}
+                disabled={isCreating}
+                className="shrink-0 w-full rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+                {isCreating ? "Adding…" : "Add"}
+              </Button>
             </div>
-            <div className="flex-1 space-y-2">
-              <label htmlFor="supervisor-email" className="text-sm font-medium text-gray-800">
-                Email
-              </label>
-              <Input
-                id="supervisor-email"
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                onBlur={() => setEmailTouched(true)}
-                placeholder="name@company.com"
-                aria-invalid={!!emailError}
-                aria-describedby={emailError ? "supervisor-email-error" : undefined}
-                className={`bg-white text-gray-900 mt-1 ${emailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-              />
-              {emailError && (
-                <p id="supervisor-email-error" className="text-xs text-red-600">
-                  {emailError}
-                </p>
-              )}
-            </div>
-            <Button
-              type="button"
-              onClick={handleCreate}
-              disabled={isCreating}
-              className="shrink-0 rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7">
-              {isCreating ? "Adding…" : "Add"}
-            </Button>
+            {nameError && (
+              <p id="supervisor-name-error" className="text-xs text-red-600">
+                {nameError}
+              </p>
+            )}
           </div>
         </section>
 
@@ -230,14 +204,7 @@ export default function SupervisorManagement() {
                 <li
                   key={s.id}
                   className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900">{s.name}</p>
-                    {s.email ? (
-                      <p className="truncate text-sm text-gray-600">{s.email}</p>
-                    ) : (
-                      <p className="text-sm text-gray-400">No email</p>
-                    )}
-                  </div>
+                  <p className="font-medium text-gray-900">{s.name}</p>
                   <div className="flex shrink-0 gap-2">
                     <button type="button" onClick={() => openEdit(s)}>
                       <Pencil className="h-4 w-4 text-gray-600 hover:text-gray-950 cursor-pointer" aria-hidden />
@@ -271,31 +238,15 @@ export default function SupervisorManagement() {
                 aria-invalid={!!editNameError}
                 aria-describedby={editNameError ? "edit-name-error" : undefined}
                 className={`bg-white text-gray-900 ${editNameError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSaveEdit();
+                  }
+                }}
               />
               {editNameError && (
                 <p id="edit-name-error" className="text-xs text-red-600">
                   {editNameError}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="edit-email" className="text-sm font-medium text-gray-800">
-                Email
-              </label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                onBlur={() => setEditEmailTouched(true)}
-                placeholder="name@company.com"
-                aria-invalid={!!editEmailError}
-                aria-describedby={editEmailError ? "edit-email-error" : undefined}
-                className={`bg-white text-gray-900 ${editEmailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-              />
-              {editEmailError && (
-                <p id="edit-email-error" className="text-xs text-red-600">
-                  {editEmailError}
                 </p>
               )}
             </div>

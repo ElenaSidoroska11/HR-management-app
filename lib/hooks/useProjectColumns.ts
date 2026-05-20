@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useProjects } from './useProjects';
 import { useSupervisors } from './useSupervisors';
 import { createProject } from '@/lib/firebase/firestore';
+import { isDuplicateDisplayName } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Project } from '@/types/project';
 import type { Supervisor as SupervisorType } from '@/types/supervisor';
@@ -65,6 +66,14 @@ export function useProjectColumns() {
     }
 
     const trimmedName = projectName.trim();
+
+    if (isDuplicateDisplayName(trimmedName, projects.map((p) => p.name))) {
+      toast.error('Name already exists', {
+        description: `A project named "${trimmedName}" already exists.`,
+      });
+      return;
+    }
+
     setIsCreating(true);
     try {
       await createProject({

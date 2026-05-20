@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useProjectAssignments } from './useAssignments';
+import { useProjects } from './useProjects';
+import { isDuplicateDisplayName } from '@/lib/utils';
 import {
   removeAssignment,
   getAssignmentsByEmployee,
@@ -19,6 +21,7 @@ interface UseProjectCardProps {
 }
 
 export function useProjectCard({ project }: UseProjectCardProps) {
+  const { projects } = useProjects();
   const { employees, loading } = useProjectAssignments(project.id);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [employeeToRemove, setEmployeeToRemove] = useState<{
@@ -164,6 +167,13 @@ export function useProjectCard({ project }: UseProjectCardProps) {
 
     const nameChanged = nextName !== project.name;
     const idChanged = nextId !== project.projectId;
+
+    if (isDuplicateDisplayName(nextName, projects.map((p) => p.name), project.name)) {
+      toast.error('Name already exists', {
+        description: `A project named "${nextName}" already exists.`,
+      });
+      return;
+    }
 
     setIsUpdating(true);
     try {

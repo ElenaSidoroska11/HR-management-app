@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useEmployees } from './useEmployees';
 import { createEmployee, updateEmployee, deleteEmployee } from '@/lib/firebase/firestore';
+import { isDuplicateDisplayName } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Employee } from '@/types/employee';
 
@@ -46,6 +47,13 @@ export function useEmployeeList() {
     const name = employeeName.trim();
     if (!name) return;
 
+    if (isDuplicateDisplayName(name, employees.map((e) => e.name))) {
+      toast.error('Name already exists', {
+        description: `An employee named "${name}" already exists.`,
+      });
+      return;
+    }
+
     try {
       await createEmployee({
         name,
@@ -65,6 +73,19 @@ export function useEmployeeList() {
   const handleEditEmployee = async () => {
     const name = employeeName.trim();
     if (!name || !editingEmployee) return;
+
+    if (
+      isDuplicateDisplayName(
+        name,
+        employees.map((e) => e.name),
+        editingEmployee.name
+      )
+    ) {
+      toast.error('Name already exists', {
+        description: `An employee named "${name}" already exists.`,
+      });
+      return;
+    }
 
     const nameChanged = name !== editingEmployee.name;
 
