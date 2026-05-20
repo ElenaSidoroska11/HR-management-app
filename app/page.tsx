@@ -14,12 +14,14 @@ import EmployeeList from "@/components/EmployeeList/EmployeeList";
 import MainWorkspace from "@/components/Workspace/MainWorkspace";
 import { assignEmployeeToProject, getProject } from "@/lib/firebase/firestore";
 import { useEmployees } from "@/lib/hooks/useEmployees";
+import { useDndLock } from "@/lib/context/dnd-lock";
 import { toast } from "sonner";
 import type { Employee } from "@/types/employee";
 
 export default function Home() {
   const [activeEmployee, setActiveEmployee] = useState<Employee | null>(null);
   const { employees } = useEmployees();
+  const { isLocked: isDndLocked } = useDndLock();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -30,6 +32,8 @@ export default function Home() {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (isDndLocked) return;
+
     const { active } = event;
     const employee = employees.find((emp) => emp.id === active.id);
     if (employee) {
@@ -41,7 +45,7 @@ export default function Home() {
     const { active, over } = event;
     setActiveEmployee(null);
 
-    if (!over) return;
+    if (isDndLocked || !over) return;
 
     const employeeId = active.id as string;
     const projectId = over.id as string;

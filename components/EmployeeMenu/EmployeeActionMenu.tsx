@@ -4,6 +4,7 @@ import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Employee } from '@/types/employee';
 import { useEmployeeActionMenu } from '@/lib/hooks/useEmployeeActionMenu';
+import { useDndLockWhileOpen } from '@/lib/context/dnd-lock';
 import { getFloatingMenuPosition, type AnchorRect } from '@/lib/utils';
 import {
   Dialog,
@@ -72,6 +73,8 @@ export default function EmployeeActionMenu({
     handleOpenTransferModal,
     handleOpenVacationModal,
   } = useEmployeeActionMenu({ employee, isOpen, onClose });
+
+  useDndLockWhileOpen(isOpen);
 
   useLayoutEffect(() => {
     if (!isOpen || !anchorRect || !menuRef.current) return;

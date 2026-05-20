@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { DndLockProvider } from "@/lib/context/dnd-lock";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,8 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh bg-linear-to-br from-emerald-50 via-white to-emerald-100`}
       >
-        {children}
-        <Toaster />
+        <DndLockProvider>
+          {children}
+          <Toaster />
+        </DndLockProvider>
       </body>
     </html>
   );

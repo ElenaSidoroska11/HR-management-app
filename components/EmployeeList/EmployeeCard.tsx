@@ -8,6 +8,7 @@ import { useEmployeeAssignments } from '@/lib/hooks/useAssignments';
 import { useProjects } from '@/lib/hooks/useProjects';
 import EmployeeActionMenu from '@/components/EmployeeMenu/EmployeeActionMenu';
 import { getPositionBgColor } from '@/lib/utils';
+import { useDndLock } from '@/lib/context/dnd-lock';
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -15,6 +16,7 @@ interface EmployeeCardProps {
 }
 
 export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
+  const { isLocked: isDndLocked } = useDndLock();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<{
     top: number;
@@ -69,6 +71,7 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
     isDragging,
   } = useDraggable({
     id: employee.id,
+    disabled: isDndLocked,
     data: {
       type: 'employee',
       employee,
@@ -103,7 +106,9 @@ export default function EmployeeCard({ employee, onEdit }: EmployeeCardProps) {
       }}
       {...listeners}
       {...attributes}
-      className={`p-3 border border-gray-200 rounded-lg transition-colors cursor-grab active:cursor-grabbing relative ${
+      className={`p-3 border border-gray-200 rounded-lg transition-colors relative ${
+        isDndLocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+      } ${
         isDragging ? 'opacity-30' : 'opacity-100'
       } ${getPositionBgColor(employee.position)} hover:opacity-80`}
       draggable={false} 

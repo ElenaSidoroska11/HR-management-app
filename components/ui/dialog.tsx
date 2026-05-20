@@ -4,8 +4,38 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 
 import { cn } from "@/lib/utils"
+import { useDndLock } from "@/lib/context/dnd-lock"
 
-const Dialog = DialogPrimitive.Root
+function Dialog({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const { acquire, release } = useDndLock()
+  const isControlled = open !== undefined
+
+  React.useEffect(() => {
+    if (!isControlled || !open) return
+    acquire()
+    return release
+  }, [isControlled, open, acquire, release])
+
+  const handleOpenChange = (next: boolean) => {
+    if (!isControlled) {
+      if (next) acquire()
+      else release()
+    }
+    onOpenChange?.(next)
+  }
+
+  return (
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  )
+}
 
 const DialogTrigger = DialogPrimitive.Trigger
 

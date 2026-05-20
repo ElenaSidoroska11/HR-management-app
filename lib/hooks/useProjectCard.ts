@@ -15,12 +15,14 @@ import {
 } from '@/lib/firebase/firestore';
 import { toast } from 'sonner';
 import type { Project } from '@/types/project';
+import { useDndLock } from '@/lib/context/dnd-lock';
 
 interface UseProjectCardProps {
   project: Project;
 }
 
 export function useProjectCard({ project }: UseProjectCardProps) {
+  const { isLocked: isDndLocked } = useDndLock();
   const { projects } = useProjects();
   const { employees, loading } = useProjectAssignments(project.id);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -38,6 +40,7 @@ export function useProjectCard({ project }: UseProjectCardProps) {
 
   const { setNodeRef, isOver } = useDroppable({
     id: project.id,
+    disabled: isDndLocked,
     data: {
       type: 'project',
       project,
