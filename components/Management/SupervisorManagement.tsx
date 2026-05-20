@@ -8,6 +8,7 @@ import { useSupervisors } from "@/lib/hooks/useSupervisors";
 import { toast } from "sonner";
 import { createSupervisor, updateSupervisor, deleteSupervisor } from "@/lib/firebase/firestore";
 import type { Supervisor } from "@/types/supervisor";
+import { Button } from "../ui/button";
 
 export default function SupervisorManagement() {
   const { supervisors, loading, error } = useSupervisors();
@@ -207,13 +208,13 @@ export default function SupervisorManagement() {
                 </p>
               )}
             </div>
-            <button
+            <Button
               type="button"
               onClick={handleCreate}
               disabled={isCreating}
               className="shrink-0 rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-7">
               {isCreating ? "Adding…" : "Add"}
-            </button>
+            </Button>
           </div>
         </section>
 
@@ -300,19 +301,19 @@ export default function SupervisorManagement() {
             </div>
           </div>
           <DialogFooter>
-            <button
+            <Button
               type="button"
               onClick={closeEdit}
               className="rounded-full bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleSaveEdit}
               disabled={isSavingEdit}
               className="rounded-full bg-gray-500 px-5 py-2.5 text-sm font-medium text-white shadow-md hover:bg-gray-600 disabled:opacity-50">
               {isSavingEdit ? "Saving…" : "Save"}
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -331,19 +332,19 @@ export default function SupervisorManagement() {
             ) : null}
           </p>
           <DialogFooter>
-            <button
+            <Button
               type="button"
               onClick={() => setDeleting(null)}
               className="rounded-full bg-gray-100 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
               className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
               {isDeleting ? "Deleting…" : "Delete"}
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

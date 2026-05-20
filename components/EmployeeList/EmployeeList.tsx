@@ -7,6 +7,7 @@ import EmployeeCard from "./EmployeeCard";
 import { useEmployeeList } from "@/lib/hooks/useEmployeeList";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 export default function EmployeeList() {
   const {
@@ -129,17 +130,17 @@ export default function EmployeeList() {
             />
           </div>
           <DialogFooter>
-            <button
+            <Button
               onClick={() => handleCloseAddDialog(false)}
               className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleAddEmployee}
               disabled={!employeeName.trim()}
               className="px-5 py-2.5 bg-gray-500 text-white rounded-full font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
               Add Employee
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -167,23 +168,23 @@ export default function EmployeeList() {
             />
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <button
+            <Button
               onClick={handleOpenDeleteConfirm}
               className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
               Delete Employee
-            </button>
+            </Button>
             <div className="flex gap-2 w-full sm:w-auto">
-              <button
+              <Button
                 onClick={() => handleCloseEditDialog(false)}
                 className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200 flex-1 sm:flex-none">
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleEditEmployee}
                 disabled={!employeeName.trim()}
                 className="px-5 py-2.5 bg-gray-600 text-white rounded-full font-medium hover:bg-gray-700 transition-colors duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none">
                 Save Changes
-              </button>
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -202,16 +203,16 @@ export default function EmployeeList() {
             </p>
           </div>
           <DialogFooter>
-            <button
+            <Button
               onClick={() => setShowDeleteConfirmDialog(false)}
-              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors duration-200">
+              className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full font-medium transition-colors duration-200">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDeleteEmployee}
-              className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg">
+              className="px-5 py-2.5 bg-red-600 text-white rounded-full font-medium hover:bg-red-700 transition-colors duration-200 shadow-md hover:shadow-lg">
               Delete
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

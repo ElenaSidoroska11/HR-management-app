@@ -1,6 +1,7 @@
 "use client";
 
 import { FolderPlus } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface AddProjectSectionProps {
   onOpenDialog: () => void;
@@ -15,14 +16,14 @@ export default function AddProjectSection({ onOpenDialog, disabled }: AddProject
         Create a project and assign it to a supervisor. It will show as a column under that supervisor on the
         Projects tab.
       </p>
-      <button
+      <Button
         type="button"
         onClick={onOpenDialog}
         disabled={disabled}
         className="inline-flex items-center gap-2 rounded-full bg-gray-500 px-4 py-2.5 text-sm font-medium text-white shadow-md transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50">
         <FolderPlus className="h-4 w-4" aria-hidden />
         Add project
-      </button>
+      </Button>
     </section>
   );
 }
