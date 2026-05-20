@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePicker, parseDateValue } from '@/components/ui/date-picker';
 
 interface EmployeeActionMenuProps {
   employee: Employee;
@@ -230,25 +231,35 @@ export default function EmployeeActionMenu({
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-black">
+              <label className="block text-sm font-medium mb-2 text-black">
                 Start Date
               </label>
-              <input
-                type="date"
+              <DatePicker
                 value={vacationStartDate}
-                onChange={(e) => setVacationStartDate(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black bg-white"
+                onChange={(value) => {
+                  setVacationStartDate(value);
+                  const start = parseDateValue(value);
+                  const end = parseDateValue(vacationEndDate);
+                  if (start && end && end < start) {
+                    setVacationEndDate('');
+                  }
+                }}
+                placeholder="Select start date"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-black">
+              <label className="block text-sm font-medium mb-2 text-black">
                 End Date
               </label>
-              <input
-                type="date"
+              <DatePicker
                 value={vacationEndDate}
-                onChange={(e) => setVacationEndDate(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black bg-white"
+                onChange={setVacationEndDate}
+                placeholder="Select end date"
+                disabled={
+                  parseDateValue(vacationStartDate)
+                    ? { before: parseDateValue(vacationStartDate)! }
+                    : undefined
+                }
               />
             </div>
           </div>
