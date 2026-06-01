@@ -99,6 +99,20 @@ export async function updateEmployee(id: string, updates: Partial<Omit<Employee,
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
+  const activeAssignments = await getAssignmentsByEmployee(id);
+  const affectedProjectIds = new Set(activeAssignments.map((a) => a.projectId));
+
+  for (const assignment of activeAssignments) {
+    await removeAssignment(assignment.id);
+  }
+
+  for (const projectId of affectedProjectIds) {
+    const remainingAssignments = await getAssignmentsByProject(projectId);
+    await updateProject(projectId, {
+      totalEmployees: remainingAssignments.length,
+    } as Partial<Project>);
+  }
+
   const docRef = doc(db, 'employees', id);
   await deleteDoc(docRef);
 }
@@ -178,27 +192,31 @@ export async function deleteProject(id: string): Promise<void> {
   // Create a set of employee IDs we've already processed
   const processedEmployeeIds = new Set<string>();
   
-  // Remove all assignments and update employees
+  // Remove all assignments and update employees that still exist
   for (const assignment of assignments) {
+    const employee = await getEmployee(assignment.employeeId);
+
     // Check if employee has other active assignments (before removing this one)
     const employeeAssignments = await getAssignmentsByEmployee(assignment.employeeId);
     const otherActiveAssignments = employeeAssignments.filter((a) => a.projectId !== id);
-    
+
     // Remove the assignment (set status to 'Removed')
     await removeAssignment(assignment.id);
-    
+
     // Mark this employee as processed
     processedEmployeeIds.add(assignment.employeeId);
-    
+
+    if (!employee) {
+      continue;
+    }
+
     // Update employee's currentProjectId
     if (otherActiveAssignments.length === 0) {
-      // No other active assignments, set to Unassigned
       await updateEmployee(assignment.employeeId, {
         currentProjectId: undefined,
         status: 'Unassigned',
       } as any);
     } else {
-      // Set currentProjectId to the first remaining active assignment
       await updateEmployee(assignment.employeeId, {
         currentProjectId: otherActiveAssignments[0].projectId,
       } as any);
@@ -208,22 +226,21 @@ export async function deleteProject(id: string): Promise<void> {
   // Handle employees that have this project as currentProjectId but no assignment
   // (data inconsistency case)
   for (const employee of employeesWithThisProject) {
-    if (!processedEmployeeIds.has(employee.id)) {
-      // This employee has currentProjectId set but no assignment - fix the inconsistency
-      const employeeAssignments = await getAssignmentsByEmployee(employee.id);
-      
-      if (employeeAssignments.length === 0) {
-        // No active assignments, set to Unassigned
-        await updateEmployee(employee.id, {
-          currentProjectId: undefined,
-          status: 'Unassigned',
-        } as any);
-      } else {
-        // Set currentProjectId to the first active assignment
-        await updateEmployee(employee.id, {
-          currentProjectId: employeeAssignments[0].projectId,
-        } as any);
-      }
+    if (processedEmployeeIds.has(employee.id)) {
+      continue;
+    }
+
+    const employeeAssignments = await getAssignmentsByEmployee(employee.id);
+
+    if (employeeAssignments.length === 0) {
+      await updateEmployee(employee.id, {
+        currentProjectId: undefined,
+        status: 'Unassigned',
+      } as any);
+    } else {
+      await updateEmployee(employee.id, {
+        currentProjectId: employeeAssignments[0].projectId,
+      } as any);
     }
   }
   

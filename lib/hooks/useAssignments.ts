@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { subscribeToAssignmentsByProject, subscribeToAssignmentsByEmployee, subscribeToVacationsByEmployee } from '@/lib/firebase/firestore';
+import {
+  subscribeToAssignmentsByProject,
+  subscribeToAssignmentsByEmployee,
+  subscribeToVacationsByEmployee,
+  removeAssignment,
+  updateProject,
+} from '@/lib/firebase/firestore';
 import type { Assignment } from '@/types/assignment';
 import type { Employee } from '@/types/employee';
 import type { Vacation } from '@/types/vacation';
@@ -33,6 +39,7 @@ export function useProjectAssignments(projectId: string | undefined) {
             assignments.map(async (assignment) => {
               const employee = await getEmployee(assignment.employeeId);
               if (!employee) {
+                await removeAssignment(assignment.id);
                 return null;
               }
               return {
@@ -43,11 +50,17 @@ export function useProjectAssignments(projectId: string | undefined) {
             })
           );
 
-          setEmployees(
-            employeesWithAssignments.filter(
-              (emp): emp is EmployeeWithAssignment => emp !== null
-            )
+          const validEmployees = employeesWithAssignments.filter(
+            (emp): emp is EmployeeWithAssignment => emp !== null
           );
+
+          if (validEmployees.length < assignments.length && projectId) {
+            await updateProject(projectId, {
+              totalEmployees: validEmployees.length,
+            } as { totalEmployees: number });
+          }
+
+          setEmployees(validEmployees);
           setLoading(false);
           setError(null);
         }
