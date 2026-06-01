@@ -4,10 +4,10 @@ A Next.js application for managing employees, projects, and assignments. Drag em
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 
+- [Node.js](https://nodejs.org/)
 - [npm](https://www.npmjs.com/)
 
-You do **not** need to create a Firebase account or set up anything in the Firebase Console. The backend is already configured — you only need credentials to connect locally.
+To run the app locally you need Firebase credentials in a `.env.local` file. You can **use your own Firebase project** (recommended if you want a private backend) or use the shared demo project — see [Get Firebase credentials](#3-get-firebase-credentials) below.
 
 ## Getting Started
 
@@ -26,29 +26,32 @@ npm install
 
 ### 3. Get Firebase credentials
 
-To run and test the application locally, you need Firebase environment variables.
+The app reads Firebase config from environment variables. Create a `.env.local` file in the project root and add your values — the app will connect to whichever Firebase project those credentials point to.
 
-**You do not need to set up Firebase yourself.** Email me at [elena.sidoroska2@gmail.com] and I will send you the credentials.
+#### Option A — Your own Firebase project (recommended)
 
-Once you receive them, create a `.env.local` file in the project root:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Open `.env.local` and paste in the values I send you. It should look like this:
+1. Create a project in the [Firebase Console](https://console.firebase.google.com/).
+2. Enable **Firestore** (create a database in test mode for local development, or configure rules that allow your use case).
+3. Add a **Web app** to the project and copy the Firebase config object.
+4. Create `.env.local` in the project root with:
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-After saving `.env.local`, the app will connect to the shared Firebase project and you can browse, add, and edit data like in a live demo.
+Firestore collections (`employees`, `projects`, `assignments`, `vacations`, `supervisors`) are created automatically when you use the app.
+
+#### Option B — Shared demo credentials
+
+If you prefer not to set up Firebase yourself, email [elena.sidoroska2@gmail.com](mailto:elena.sidoroska2@gmail.com) and I will send credentials for the shared demo project. Paste them into `.env.local` using the same variable names as above.
+
+After saving `.env.local`, restart the dev server if it is already running.
 
 ### 4. Run the development server
 
