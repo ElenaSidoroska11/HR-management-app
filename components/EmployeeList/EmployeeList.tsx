@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 
 export default function EmployeeList() {
   const {
+    employees,
     filteredEmployees,
     loading,
     error,
@@ -96,8 +97,11 @@ export default function EmployeeList() {
         }}>
         {filteredEmployees.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
-            <p>No employees found</p>
-            <p className="text-sm mt-2">Try adjusting your search or filters</p>
+            <p>{employees.length === 0 ? "No employees yet" : "No employees found"}</p>
+            {employees.length > 0 &&
+              (searchQuery !== "" || statusFilter !== "all" || positionFilter !== "all") && (
+                <p className="text-sm mt-2">Try adjusting your search or filters</p>
+              )}
           </div>
         ) : (
           <div className="space-y-2">
